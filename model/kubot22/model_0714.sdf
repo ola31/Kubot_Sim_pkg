@@ -1,0 +1,701 @@
+<sdf version='1.6'>
+  <model name='kubot22'>
+  <joint name="fixed to world" type="fixed">
+     <parent>world</parent>
+     <child>base_link</child>
+    </joint>
+
+    <link name='base_link'>
+      <pose frame=''>0 0 0 0 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.134878 -0.03362 0.106921 0 -0 0</pose>
+        <mass>1.17505</mass>
+        <inertia>
+          <ixx>0.201876</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.207047</iyy>
+          <iyz>0</iyz>
+          <izz>0.00947106</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='base_link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/base_link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='base_link_visual'>
+       s <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/base_link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <link name='LP_Link'>
+      <pose frame=''>0.159486 0.040474 0.15696 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.010194 -0 -0.000143 0 -0 0</pose>
+        <mass>0.03344</mass>
+        <inertia>
+          <ixx>0.00008</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00011</iyy>
+          <iyz>0</iyz>
+          <izz>0.00003</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='L_P_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_P_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='LP_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_P_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='LHY' type='revolute'>
+      <child>LP_Link</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='LPm_Link'>
+      <pose frame=''>0.126966 0.074974 0.15696 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.007077 3.9e-05 -0.015156 0 -0 0</pose>
+        <mass>0.26897</mass>
+        <inertia>
+          <ixx>0.00014</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00031</iyy>
+          <iyz>0</iyz>
+          <izz>0.00022</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='L_Pm_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_Pm_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='LPm_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_Pm_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='LHR' type='revolute'>
+      <child>LPm_Link</child>
+      <parent>LP_Link</parent>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='LPd_Link'>
+      <pose frame=''>0.159666 0.074974 0.18046 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>2e-06 -0.023322 -0.098565 0 -0 0</pose>
+        <mass>0.20444</mass>
+        <inertia>
+          <ixx>0.00177</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00153</iyy>
+          <iyz>0</iyz>
+          <izz>0.0003</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='L_Pd_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_Pd_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='LPd_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_Pd_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='LHP' type='revolute'>
+      <child>LPd_Link</child>
+      <parent>LPm_Link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='LK_Link'>
+      <pose frame=''>0.159666 0.212974 0.18306 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0 -0.0259 -0.066982 0 -0 0</pose>
+        <mass>0.05316</mass>
+        <inertia>
+          <ixx>0.00038</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00032</iyy>
+          <iyz>0</iyz>
+          <izz>0.00007</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='L_K_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_K_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='LK_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_K_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='LKP' type='revolute'>
+      <child>LK_Link</child>
+      <parent>LPd_Link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='LA_Link'>
+      <pose frame=''>0.159666 0.355974 0.18306 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>-0.025967 -0.025948 0.01564 0 -0 0</pose>
+        <mass>0.32297</mass>
+        <inertia>
+          <ixx>0.0004</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00053</iyy>
+          <iyz>0</iyz>
+          <izz>0.00064</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='L_A_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_A_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='LA_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_A_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='LAP' type='revolute'>
+      <child>LA_Link</child>
+      <parent>LK_Link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='LF_Link'>
+      <pose frame=''>0.129466 0.355974 0.15706 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.031064 0.014394 -0.034382 0 -0 0</pose>
+        <mass>0.05026</mass>
+        <inertia>
+          <ixx>0.00027</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00053</iyy>
+          <iyz>0</iyz>
+          <izz>0.00064</izz>
+        </inertia>
+      </inertial>
+      <collision name='LF_Link_collision'>
+        <pose frame=''>0.03 0.015 -0.037 0 -0 0</pose>
+        <!-- <geometry>
+	 <box>
+	 <size>0.17 0.1 0.012</size>
+	 </box>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_F_Link.STL</uri>
+          </mesh>
+        </geometry> -->
+
+	<geometry>
+	 <box>
+	 <size>0.15 0.095 0.005</size>
+	 </box>
+         <!-- <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_F_Link.STL</uri>
+          </mesh> -->
+        </geometry>
+	<surface>
+             <contact>
+              <ode>
+    	    <kp>10000</kp>
+                <kd>100</kd>
+                <max_vel>0.1</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+             </contact>
+            </surface>
+
+      </collision>
+      <visual name='LF_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/L_F_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='LAR' type='revolute'>
+      <child>LF_Link</child>
+      <parent>LA_Link</parent>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='RP_Link'>
+      <pose frame=''>0.159486 0.040474 0.05696 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.010194 -0 -0.000143 0 -0 0</pose>
+        <mass>0.03344</mass>
+        <inertia>
+          <ixx>0.00008</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00011</iyy>
+          <iyz>0</iyz>
+          <izz>0.00003</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='R_P_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_P_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='RP_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_P_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='RHY' type='revolute'>
+      <child>RP_Link</child>
+      <parent>base_link</parent>
+      <axis>
+        <xyz>0 1 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='RPm_Link'>
+      <pose frame=''>0.126966 0.074974 0.05696 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.007077 -3.9e-05 -0.015156 0 -0 0</pose>
+        <mass>0.26897</mass>
+        <inertia>
+          <ixx>0.0028</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00031</iyy>
+          <iyz>0</iyz>
+          <izz>0.0029</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='R_Pm_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_Pm_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='RPm_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_Pm_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='RHR' type='revolute'>
+      <child>RPm_Link</child>
+      <parent>RP_Link</parent>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='RPd_Link'>
+      <pose frame=''>0.159666 0.074974 0.03346 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>-2e-06 0.023322 -0.098565 0 -0 0</pose>
+        <mass>0.20444</mass>
+        <inertia>
+          <ixx>0.0048</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.0015</iyy>
+          <iyz>0</iyz>
+          <izz>0.0033</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='R_Pd_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_Pd_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='RPd_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_Pd_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='RHP' type='revolute'>
+      <child>RPd_Link</child>
+      <parent>RPm_Link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='RK_Link'>
+      <pose frame=''>0.159666 0.212974 0.03086 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>-0 0.0259 -0.076018 0 -0 0</pose>
+        <mass>0.05316</mass>
+        <inertia>
+          <ixx>0.00038</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00032</iyy>
+          <iyz>0</iyz>
+          <izz>0.00007</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='R_K_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_K_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='RK_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_K_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='RKP' type='revolute'>
+      <child>RK_Link</child>
+      <parent>RPd_Link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='RA_Link'>
+      <pose frame=''>0.159666 0.355974 0.03086 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>-0.02597 0.025944 0.01564 0 -0 0</pose>
+        <mass>0.32297</mass>
+        <inertia>
+          <ixx>0.0004</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00053</iyy>
+          <iyz>0</iyz>
+          <izz>0.00064</izz>
+        </inertia>
+      </inertial>
+      <!-- <collision name='R_A_Link_collision'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_A_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </collision> -->
+      <visual name='RA_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_A_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='RAP' type='revolute'>
+      <child>RA_Link</child>
+      <parent>RK_Link</parent>
+      <axis>
+        <xyz>0 0 1</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+    <link name='RF_Link'>
+      <pose frame=''>0.129466 0.355974 0.05686 1.5708 -0 0</pose>
+      <inertial>
+        <pose frame=''>0.031064 -0.014388 -0.034388 0 -0 0</pose>
+        <mass>0.05026</mass>
+        <inertia>
+          <ixx>0.00027</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.00053</iyy>
+          <iyz>0</iyz>
+          <izz>0.00064</izz>
+        </inertia>
+      </inertial>
+      <collision name='RF_Link_collision'>
+        <pose frame=''>0.03 -0.015 -0.037 0 -0 0</pose>
+        <!-- <geometry>
+	 <box>
+	 <size>0.17 0.1 0.012</size>
+	 </box>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_F_Link.STL</uri>
+          </mesh>
+        </geometry> -->
+	<geometry>
+	 <box>
+	 <size>0.15 0.09 0.005</size>
+	 </box>
+         <!-- <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_F_Link.STL</uri>
+          </mesh> -->
+        </geometry>
+	<surface>
+             <contact>
+              <ode>
+    	    <kp>10000</kp>
+                <kd>100</kd>
+                <max_vel>0.1</max_vel>
+                <min_depth>0.001</min_depth>
+              </ode>
+             </contact>
+            </surface>
+
+      </collision>
+      <visual name='RF_Link_visual'>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+        <geometry>
+          <mesh>
+            <scale>1 1 1</scale>
+            <uri>model://kubot22/meshes/R_F_Link.STL</uri>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    <joint name='RAR' type='revolute'>
+      <child>RF_Link</child>
+      <parent>RA_Link</parent>
+      <axis>
+        <xyz>1 0 0</xyz>
+        <limit>
+          <lower>-3.14</lower>
+          <upper>3.14</upper>
+          <effort>0</effort>
+          <velocity>0</velocity>
+        </limit>
+        <dynamics>
+          <spring_reference>0</spring_reference>
+          <spring_stiffness>0</spring_stiffness>
+        </dynamics>
+        <use_parent_model_frame>1</use_parent_model_frame>
+      </axis>
+    </joint>
+  </model>
+</sdf>

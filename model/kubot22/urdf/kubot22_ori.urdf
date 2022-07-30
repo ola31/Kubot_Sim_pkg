@@ -1,0 +1,743 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="kubot22">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.13487757053926 -0.0336202311608078 0.106920714353761"
+        rpy="0 0 0" />
+      <mass
+        value="0.882763599534397" />
+      <inertia
+        ixx="0.00111382201957083"
+        ixy="-4.21786206715989E-06"
+        ixz="-3.25725617277599E-06"
+        iyy="0.00172986476818121"
+        iyz="-9.9311816873734E-07"
+        izz="0.000908858636466996" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <link
+    name="L_P_Link">
+    <inertial>
+      <origin
+        xyz="0.0101942341044289 -2.22044604925031E-16 -0.000142768980480532"
+        rpy="0 0 0" />
+      <mass
+        value="0.0393857347582611" />
+      <inertia
+        ixx="2.64964190476657E-05"
+        ixy="1.06853302085836E-19"
+        ixz="1.14503891498095E-06"
+        iyy="3.48934068790809E-05"
+        iyz="-1.65767744381382E-19"
+        izz="1.3647568165069E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_P_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_P_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LP"
+    type="revolute">
+    <origin
+      xyz="0.159485615221285 0.0404744286028535 0.156960053259992"
+      rpy="1.5707963267949 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="L_P_Link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="L_Pm_Link">
+    <inertial>
+      <origin
+        xyz="0.00707717713304501 3.85239838591456E-05 -0.0151561501062952"
+        rpy="0 0 0" />
+      <mass
+        value="0.162200904744285" />
+      <inertia
+        ixx="5.7104715252823E-05"
+        ixy="-1.84219355186035E-15"
+        ixz="-8.84021044537679E-07"
+        iyy="5.64546355569106E-05"
+        iyz="-8.80586953161381E-07"
+        izz="3.55989270228193E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_Pm_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_Pm_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LPm"
+    type="revolute">
+    <origin
+      xyz="-0.0325199999999994 0 -0.0344999999999993"
+      rpy="0 0 0" />
+    <parent
+      link="L_P_Link" />
+    <child
+      link="L_Pm_Link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="L_Pd_Link">
+    <inertial>
+      <origin
+        xyz="2.38804326063713E-06 -0.0233215850886279 -0.0985654144211849"
+        rpy="0 0 0" />
+      <mass
+        value="0.131437999723236" />
+      <inertia
+        ixx="6.74148953552328E-05"
+        ixy="2.31027379277854E-09"
+        ixz="1.64109502160248E-09"
+        iyy="6.23573284633263E-05"
+        iyz="1.06283658581043E-06"
+        izz="2.94619383856094E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_Pd_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_Pd_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LPd"
+    type="revolute">
+    <origin
+      xyz="0.0327000000000002 0.0234999999999997 0"
+      rpy="0 0 0" />
+    <parent
+      link="L_Pm_Link" />
+    <child
+      link="L_Pd_Link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="L_K_Link">
+    <inertial>
+      <origin
+        xyz="9.15933995315754E-16 -0.0259000000000005 -0.0669817464987959"
+        rpy="0 0 0" />
+      <mass
+        value="0.0456080512896605" />
+      <inertia
+        ixx="9.51110967920258E-05"
+        ixy="2.2043798017358E-20"
+        ixz="1.47886924624151E-18"
+        iyy="9.72572102585299E-05"
+        iyz="-6.82082480675503E-19"
+        izz="4.88947453763215E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_K_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_K_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LK"
+    type="revolute">
+    <origin
+      xyz="0 0.00259999999999899 -0.138"
+      rpy="0 0 0" />
+    <parent
+      link="L_Pd_Link" />
+    <child
+      link="L_K_Link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="L_A_Link">
+    <inertial>
+      <origin
+        xyz="-0.0259666104120727 -0.0259475134476136 0.0156397822927297"
+        rpy="0 0 0" />
+      <mass
+        value="0.190388191021813" />
+      <inertia
+        ixx="7.64195116737871E-05"
+        ixy="-1.15225093959467E-16"
+        ixz="1.06791218491658E-06"
+        iyy="7.57694319796679E-05"
+        iyz="1.06119549076496E-06"
+        izz="4.77962950267527E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_A_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_A_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LA"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.143"
+      rpy="0 0 0" />
+    <parent
+      link="L_K_Link" />
+    <child
+      link="L_A_Link" />
+    <axis
+      xyz="0 -1 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="L_F_Link">
+    <inertial>
+      <origin
+        xyz="0.0310640975062315 0.0143937054527845 -0.0343821494549726"
+        rpy="0 0 0" />
+      <mass
+        value="0.0868435167094629" />
+      <inertia
+        ixx="6.6263151611369E-05"
+        ixy="-2.45575588587493E-09"
+        ixz="-9.73035350957053E-11"
+        iyy="0.00014335576194635"
+        iyz="3.45047996863833E-09"
+        izz="0.000203561773995672" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_F_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/L_F_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="LF"
+    type="revolute">
+    <origin
+      xyz="-0.0302000000025354 -0.0259999999982274 0"
+      rpy="0 0 0" />
+    <parent
+      link="L_A_Link" />
+    <child
+      link="L_F_Link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="R_P_Link">
+    <inertial>
+      <origin
+        xyz="0.010194234104429 -6.93889390390723E-17 -0.000142768980477243"
+        rpy="0 0 0" />
+      <mass
+        value="0.039385734758261" />
+      <inertia
+        ixx="2.64964190476657E-05"
+        ixy="9.96852611367357E-20"
+        ixz="1.14503891498095E-06"
+        iyy="3.48934068790809E-05"
+        iyz="-1.49177113282633E-19"
+        izz="1.3647568165069E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_P_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_P_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RP"
+    type="revolute">
+    <origin
+      xyz="0.159485615221284 0.0404744286028528 0.056960053259992"
+      rpy="1.5707963267949 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="R_P_Link" />
+    <axis
+      xyz="0 0 1" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="R_Pm_Link">
+    <inertial>
+      <origin
+        xyz="0.00707717626302978 -3.85248505976876E-05 -0.0151561501067035"
+        rpy="0 0 0" />
+      <mass
+        value="0.16220090474444" />
+      <inertia
+        ixx="5.7104715251826E-05"
+        ixy="3.93080780626017E-16"
+        ixz="-8.84021462112588E-07"
+        iyy="5.64546355578891E-05"
+        iyz="8.80586542006963E-07"
+        izz="3.55989270225549E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_Pm_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_Pm_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RPm"
+    type="revolute">
+    <origin
+      xyz="-0.0325199999999994 0 -0.0345000000000015"
+      rpy="0 0 0" />
+    <parent
+      link="R_P_Link" />
+    <child
+      link="R_Pm_Link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="R_Pd_Link">
+    <inertial>
+      <origin
+        xyz="-2.38804325317088E-06 0.0233215850886161 -0.0985654144211578"
+        rpy="0 0 0" />
+      <mass
+        value="0.131437999723154" />
+      <inertia
+        ixx="6.7414895355171E-05"
+        ixy="2.31027378172361E-09"
+        ixz="-1.64109500692008E-09"
+        iyy="6.23573284632843E-05"
+        iyz="-1.06283658584147E-06"
+        izz="2.94619383855796E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_Pd_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_Pd_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RPd"
+    type="revolute">
+    <origin
+      xyz="0.0326999999999998 -0.0234999999999854 0"
+      rpy="0 0 0" />
+    <parent
+      link="R_Pm_Link" />
+    <child
+      link="R_Pd_Link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="R_K_Link">
+    <inertial>
+      <origin
+        xyz="-1.91668902971287E-12 0.0258999999999996 -0.0760182535012041"
+        rpy="0 0 0" />
+      <mass
+        value="0.0456080512896606" />
+      <inertia
+        ixx="9.5111096792026E-05"
+        ixy="2.09851416571634E-20"
+        ixz="-2.27519646291819E-15"
+        iyy="9.72572102585302E-05"
+        iyz="-6.45894299949005E-19"
+        izz="4.88947453763216E-06" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_K_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_K_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RK"
+    type="revolute">
+    <origin
+      xyz="0 -0.00260000000000109 -0.138"
+      rpy="0 0 0" />
+    <parent
+      link="R_Pd_Link" />
+    <child
+      link="R_K_Link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="R_A_Link">
+    <inertial>
+      <origin
+        xyz="-0.0259699076687473 0.0259442161897109 0.0156397822937843"
+        rpy="0 0 0" />
+      <mass
+        value="0.19038819102189" />
+      <inertia
+        ixx="7.6419511673877E-05"
+        ixy="4.1115114291799E-18"
+        ixz="1.06462999338413E-06"
+        iyy="7.57694319797569E-05"
+        iyz="-1.06447768084667E-06"
+        izz="4.77962950267124E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_A_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_A_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RA"
+    type="revolute">
+    <origin
+      xyz="0 0 -0.143"
+      rpy="0 0 0" />
+    <parent
+      link="R_K_Link" />
+    <child
+      link="R_A_Link" />
+    <axis
+      xyz="0 1 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+  <link
+    name="R_F_Link">
+    <inertial>
+      <origin
+        xyz="0.0310642516260749 -0.0143882402101243 -0.0343879845773217"
+        rpy="0 0 0" />
+      <mass
+        value="0.0868765034323255" />
+      <inertia
+        ixx="6.62738521352016E-05"
+        ixy="2.19531020861638E-09"
+        ixz="9.3370155367727E-11"
+        iyy="0.000143399701069219"
+        iyz="3.31099842956373E-09"
+        izz="0.000203616408054889" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_F_Link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://kubot22/meshes/R_F_Link.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="RF"
+    type="revolute">
+    <origin
+      xyz="-0.0302 0.026 0"
+      rpy="0 0 0" />
+    <parent
+      link="R_A_Link" />
+    <child
+      link="R_F_Link" />
+    <axis
+      xyz="-1 0 0" />
+    <limit
+      lower="0"
+      upper="0"
+      effort="0"
+      velocity="0" />
+  </joint>
+</robot>
