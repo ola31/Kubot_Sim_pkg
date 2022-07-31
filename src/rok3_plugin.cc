@@ -41,6 +41,7 @@
 #include <rbdl/addons/urdfreader/urdfreader.h> // urdf model read using RBDL
 #include <Eigen/Dense> // Eigen is a C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
 
+
 #define PI      3.141592
 #define D2R     PI/180.
 #define R2D     180./PI
@@ -58,6 +59,7 @@
 //Eigen//
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
+
 
 //RBDL//
 using namespace RigidBodyDynamics;
@@ -148,7 +150,69 @@ double L3 = 0.133;
 double L4 = 0.138;
 double L5 = 0.037;
 
+/********************* Preview Control ************************/
 
+struct XY{
+  double x;
+  double y;
+};
+
+double All_time_trajectory = 15.0;  //(sec)
+double dt = 0.001;  //sampling time
+int N = 1000;  //preview NL
+int n = (int)((double)All_time_trajectory/dt)+1;
+
+double z_c = 0.2; //Height of CoM
+double g = 9.81; //Gravity Acceleration
+
+MatrixXd A(3,3);
+MatrixXd B(3,1);
+MatrixXd C(1,3);
+
+int Qe = 1;
+MatrixXd Qx(3,3);
+Eigen::Matrix4d Q;
+MatrixXd R(1,1); // 1*10^(-6)
+
+Eigen::Vector4d BB;
+MatrixXd II(4,1);
+MatrixXd FF(4,3);
+Eigen::Matrix4d AA;
+MatrixXd KK;
+MatrixXd Gi(1,1);
+MatrixXd Gx;
+VectorXd Gp(N);
+MatrixXd XX;
+MatrixXd AAc;
+
+Eigen::EigenSolver<MatrixXd> eZMPSolver;
+
+MatrixXd State_X(3,1);  // State(posi, vel, acc) for X_axis direction
+MatrixXd State_Y(3,1);
+
+struct XY input_u   = {.x=0, .y=0}; // control input jerk
+
+struct XY zmp       = {.x=0, .y=0};
+struct XY CoM       = {.x=0, .y=0};
+struct XY zmp_error = {.x=0, .y=0}; // error or ZMP
+struct XY sum_error = {.x=0, .y=0}; //sum of error
+struct XY u_sum_p   = {.x=0, .y=0}; //sum or future Reference
+
+struct XY get_zmp_ref(int step_time_index);
+void set_system_model(void);
+void set_Weight_Q(void);
+void get_gain_G(void);
+void initialize_CoM_State_Zero(void);
+void initialize_starting_ZMP_Zero(void);
+MatrixXd ZMP_DARE(Eigen::Matrix4d A, Eigen::Vector4d B, Eigen::Matrix4d Q, MatrixXd R);
+
+
+int time_index = 0;
+
+#include <vector>
+std::vector<std::vector<double>> save;
+
+/*****************************************************************/
 
 
 namespace gazebo
@@ -185,7 +249,7 @@ namespace gazebo
 
         /* ROS */
 
-        ros::NodeHandle n;
+        ros::NodeHandle nh;
 
 
         ros::Publisher LHY_pub;
@@ -240,6 +304,7 @@ namespace gazebo
         void Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*/); // Loading model data and initializing the system before simulation 
         void UpdateAlgorithm(); // Algorithm update while simulation
         void UpdateAlgorithm2();
+        void UpdateAlgorithm3();
 
         void jointController(); // Joint Controller for each joint
 
@@ -1428,12 +1493,25 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
 
 
     //ROS Publishers
-    LHY_pub = n.advertise<std_msgs::Float64>("command_joint/LHY", 1000);
-    LHR_pub = n.advertise<std_msgs::Float64>("command_joint/LHR", 1000);
-    LHP_pub = n.advertise<std_msgs::Float64>("command_joint/LHP", 1000);
-    LKN_pub = n.advertise<std_msgs::Float64>("command_joint/LKN", 1000);
-    LAP_pub = n.advertise<std_msgs::Float64>("command_joint/LAP", 1000);
-    LAR_pub = n.advertise<std_msgs::Float64>("command_joint/LHR", 1000);
+    LHY_pub = nh.advertise<std_msgs::Float64>("command_joint/LHY", 1000);
+    LHR_pub = nh.advertise<std_msgs::Float64>("command_joint/LHR", 1000);
+    LHP_pub = nh.advertise<std_msgs::Float64>("command_joint/LHP", 1000);
+    LKN_pub = nh.advertise<std_msgs::Float64>("command_joint/LKN", 1000);
+    LAP_pub = nh.advertise<std_msgs::Float64>("command_joint/LAP", 1000);
+    LAR_pub = nh.advertise<std_msgs::Float64>("command_joint/LHR", 1000);
+
+
+    /*** Initial setting for Preview Control ***/
+    set_system_model();
+    std::cout<<"1"<<std::endl;
+    set_Weight_Q();
+    std::cout<<"2"<<std::endl;
+    get_gain_G();
+    std::cout<<"3"<<std::endl;
+    initialize_CoM_State_Zero();
+    std::cout<<"4"<<std::endl;
+    initialize_starting_ZMP_Zero();
+    std::cout<<"5"<<std::endl;
 
 
 
@@ -1448,6 +1526,7 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
 
     update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm, this));
     //update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm2, this));
+    update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm3, this));
     
     Practice();
 
@@ -2437,6 +2516,7 @@ void gazebo::rok3_plugin::UpdateAlgorithm2()
     q_R = IK_Geometric(Body, foot_y, 0.35, 0.35, 0.09, Foot_R);
 
     //t = 0.0;
+
     if(t<T){
       if(phase == 0){
         q_command_L = func_1_cos(t,init,q_L,T);
@@ -2526,3 +2606,377 @@ void gazebo::rok3_plugin::UpdateAlgorithm2()
     jointController();
 }
 
+
+void gazebo::rok3_plugin::UpdateAlgorithm3()
+{
+    /*
+     * Algorithm update while simulation
+     */
+
+    //* UPDATE TIME : 1ms
+    ///common::Time current_time = model->GetWorld()->GetSimTime();
+    #if GAZEBO_MAJOR_VERSION >= 8
+        common::Time current_time = model->GetWorld()->SimTime();
+    #else
+        common::Time current_time = model->GetWorld()->GetSimTime();
+    #endif
+
+    dt = current_time.Double() - last_update_time.Double();
+     //   cout << "dt:" << dt << endl;
+    time = time + dt;
+    //cout << "time:" << time << endl;
+
+    //* setting for getting dt at next step
+    last_update_time = current_time;
+
+
+    //* Read Sensors data
+   GetjointData();
+
+    MatrixXd Body(4,4);
+    MatrixXd Foot_L(4,4);
+    MatrixXd Foot_R(4,4);
+
+    double body_z = z_c;//0.5;//m
+    double foot_z = 0.0; //m
+    double foot_y = L1;//m
+    double foot_x = 0;//m
+
+    double step_length = 0.05;
+    double step_height = 0.1;
+
+    if((phase == 1) && time_index < n-N){
+      zmp_error.x = zmp.x - get_zmp_ref(time_index).x;
+      zmp_error.y = zmp.y - get_zmp_ref(time_index).y;
+
+      sum_error.x = sum_error.x + zmp_error.x;
+      sum_error.y = sum_error.y + zmp_error.y;
+
+      for(int j=0;j<N;j++){
+        u_sum_p.x = u_sum_p.x + Gp(j)*get_zmp_ref(time_index + j + 1).x;
+        u_sum_p.y = u_sum_p.y + Gp(j)*get_zmp_ref(time_index + j + 1).y;
+      }
+
+      input_u.x = -Gi(0,0)*sum_error.x - (Gx*State_X)(0,0) - u_sum_p.x;
+      input_u.y = -Gi(0,0)*sum_error.y - (Gx*State_Y)(0,0) - u_sum_p.y;
+
+      //get CoM
+      CoM.x = State_X(0,0);
+      CoM.y = State_Y(0,0);
+
+      //get new System State based on System state-space Eq
+      State_X = A*State_X + B*input_u.x;
+      State_Y = A*State_Y + B*input_u.y;
+
+      //get ZMP based on System state-space Eq
+      zmp.x = (C*State_X)(0,0);
+      zmp.y = (C*State_Y)(0,0);
+
+      u_sum_p.x = 0;
+      u_sum_p.y = 0;
+
+     }
+
+    std::cout<<"com_y : "<<CoM.y<<std::endl;
+
+
+
+
+
+    Body <<  1,0,0,  CoM.x,
+             0,1,0,  CoM.y,
+             0,0,1, body_z,
+             0,0,0,      1;
+
+    Foot_L <<1,0,0,       0,
+             0,1,0, -foot_y,
+             0,0,1,  foot_z,
+             0,0,0,       1;
+
+    Foot_R <<1,0,0,      0,
+             0,1,0, foot_y,
+             0,0,1, foot_z,
+             0,0,0,      1;
+
+    VectorXd q_L(6);
+    VectorXd q_R(6);
+    VectorXd init(6);
+    init<<0,0,0,0,0,0;
+
+    q_L = IK_Geometric(Body, -L1, L3, L4, L5, Foot_L);
+    q_R = IK_Geometric(Body, L1, L3, L4, L5, Foot_R);
+
+    //t = 0.0;
+    if(phase == 0){
+      if(t<T){
+        q_command_L = func_1_cos(t,init,q_L,T);
+        q_command_R = func_1_cos(t,init,q_R,T);
+        t += dt;
+      }
+      else {
+        phase++;
+      }
+    }
+    else if(phase == 1){
+      if(time_index >= n-N){
+        FILE *fp; // DH : for save the data
+        fp = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/zmp_and_com_data.txt", "w");
+        for(int i=0;i<save.size();i++){
+          if(i == 0){
+            fprintf(fp,"time\t");
+            fprintf(fp,"zmp_ref_y\t");
+            fprintf(fp,"zmp_y\t");
+            fprintf(fp,"COM_y\n");
+          }
+          fprintf(fp, "%.4f\t", save[i][0]); //time
+          fprintf(fp, "%.4f\t", save[i][1]); //zmp_ref_y
+          fprintf(fp, "%.4f\t", save[i][2]); //zmp y
+          fprintf(fp, "%.4f\n", save[i][3]); //CoM y
+        }
+        printf("save complete! \n");
+        printf("save complete!! \n");
+        printf("save complete!!! \n");
+        printf("save complete!!!! \n");
+        printf("save complete!!!!! \n");
+        printf("save complete!!!!!! \n");
+        printf("save complete!!!!!!! \n");
+        fclose(fp);
+
+        phase++;
+
+      }
+
+      std::vector<double> data;
+      data.push_back(time_index*dt);
+      data.push_back(get_zmp_ref(time_index).y);
+      data.push_back(zmp.y);
+      data.push_back(CoM.y);
+      save.push_back(data);
+
+      time_index++;
+      q_command_L = q_L;
+      q_command_R = q_R;
+    }
+    else if(phase = 2){
+
+    }
+
+
+
+
+    //q_command_L = q_L;
+    //q_command_R = q_R;
+
+
+    //* Target Angles
+
+    joint[LHY].targetRadian = q_command_L(0);//*D2R;
+    joint[LHR].targetRadian = q_command_L(1);//*D2R;
+    joint[LHP].targetRadian = q_command_L(2);//*D2R;
+    joint[LKN].targetRadian = q_command_L(3);//*D2R;
+    joint[LAP].targetRadian = q_command_L(4);//*D2R;
+    joint[LAR].targetRadian = q_command_L(5);//*D2R;
+
+    joint[RHY].targetRadian = q_command_R(0);//*D2R;
+    joint[RHR].targetRadian = q_command_R(1);//*D2R;
+    joint[RHP].targetRadian = q_command_R(2);//*D2R;
+    joint[RKN].targetRadian = q_command_R(3);//*D2R;
+    joint[RAP].targetRadian = q_command_R(4);//*D2R;
+    joint[RAR].targetRadian = q_command_R(5);//*D2R;
+
+
+    //* Publish topics
+    LHY_msg.data = q_command_L(0);
+    LHR_msg.data = q_command_L(1);
+    LHP_msg.data = q_command_L(2);
+    LKN_msg.data = q_command_L(3);
+    LAP_msg.data = q_command_L(4);
+    LAR_msg.data = q_command_L(5);
+
+    LHY_pub.publish(LHY_msg);
+    LHR_pub.publish(LHR_msg);
+    LHP_pub.publish(LHP_msg);
+    LKN_pub.publish(LKN_msg);
+    LAP_pub.publish(LAP_msg);
+    LAR_pub.publish(LAR_msg);
+
+
+
+
+  /*First motion Complete.*/
+
+
+
+    //* Joint Controller
+    jointController();
+}
+
+struct XY get_zmp_ref(int step_time_index){
+  struct XY zmp_ref;
+
+  double time = dt*step_time_index;
+  if(time<3){
+    zmp_ref.x = 0;
+    zmp_ref.y = 0;
+  }
+  else if(time<5){
+    zmp_ref.x  = 0;
+    zmp_ref.y = L1;
+  }
+  else if(time<7){
+    zmp_ref.x  = 0;
+    zmp_ref.y = -L1;
+  }
+  else if(time<9){
+    zmp_ref.x  = 0;
+    zmp_ref.y = L1;
+  }
+  else if(time<11){
+    zmp_ref.x  = 0;
+    zmp_ref.y = -L1;
+  }
+  else if(time<12){
+    zmp_ref.x  = 0;
+    zmp_ref.y = L1;
+  }
+  else{
+    zmp_ref.x = 0;
+    zmp_ref.y = 0;
+  }
+
+  return zmp_ref;
+
+}
+
+
+void set_system_model(void){
+  A << 1, dt, dt*dt/2,\
+       0, 1,      dt,\
+       0, 0,       1;
+
+  B << dt*dt*dt/6,\
+       dt*dt/2,\
+       dt;
+  C << 1, 0, -z_c/g;
+
+}
+
+void set_Weight_Q(void){
+  Qe = 1;
+
+  Qx << 0,0,0,\
+        0,0,0,\
+        0,0,0;
+
+  Q(0,0) = Qe; Q.block(0,1,1,3) = MatrixXd::Zero(1,3);
+  Q.block(1,0,3,1) = MatrixXd::Zero(3,1); Q.block(1,1,3,3)= Qx;
+
+  R << 0.000001;
+}
+
+void initialize_CoM_State_Zero(void){
+   State_X<<0,0,0;
+   State_Y<<0,0,0;
+}
+void initialize_starting_ZMP_Zero(void){
+   zmp.x = 0;
+   zmp.y = 0;
+}
+
+void get_gain_G(void){
+  std::cout<<"a"<<std::endl;
+  BB << (C*B)(0,0),\
+        B(0,0),\
+        B(1,0),\
+        B(2,0);
+  std::cout<<"b"<<std::endl;
+  II <<1,\
+       0,\
+       0,\
+       0;
+  std::cout<<"c"<<std::endl;
+  FF.block(0,0,1,3) = C*A;
+  std::cout<<"c2"<<std::endl;
+  FF.block(1,0,3,3) = A;
+  std::cout<<"d"<<std::endl;
+
+  AA.block(0,0,4,1) = II;
+  std::cout<<"e"<<std::endl;
+  AA.block(0,1,4,3) = FF;
+  std::cout<<"f"<<std::endl;
+
+  KK = ZMP_DARE(AA,BB,Q,R);
+  std::cout<<"g"<<std::endl;
+  Gi = (R + (BB.transpose()*KK*BB)).inverse()*(BB.transpose()*KK*II);
+  std::cout<<"h"<<std::endl;
+  Gx = (R + (BB.transpose()*KK*BB)).inverse()*(BB.transpose()*KK*FF);
+  std::cout<<"i"<<std::endl;
+  AAc = AA - BB*((R + (BB.transpose()*KK*BB)).inverse())*BB.transpose()*KK*AA;
+
+  std::cout<<"j"<<std::endl;
+  for(int i=0;i<N;i++){
+    if(i==0){
+      XX = -AAc.transpose()*KK*II;
+      Gp(i) = -Gi(0,0);
+    }
+    else{
+      Gp(i) = (((R + (BB.transpose()*KK*BB)).inverse())*(BB.transpose()*XX))(0,0);
+      XX = AAc.transpose()*XX;
+    }
+
+
+
+    FILE *fp2; // DH : for save the data
+    fp2 = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/Gp.txt", "w");
+    fprintf(fp2, "index\t");
+    fprintf(fp2, "Gp\n");
+    for(int i=0;i<N;i++){
+      fprintf(fp2,"%d\t",i);
+      fprintf(fp2, "%.4f\n", Gp(i)); //time
+    }
+
+    fclose(fp2);
+  }
+
+
+
+}
+
+MatrixXd ZMP_DARE(Eigen::Matrix4d A, Eigen::Vector4d B, Eigen::Matrix4d Q, MatrixXd R)//Kookmin.Univ Preview
+{
+    unsigned int nSize = A.rows();
+    MatrixXd Z(nSize* 2, nSize* 2);
+
+    Z.block(0, 0, nSize, nSize) = A+ B* R.inverse()* B.transpose()* (A.inverse()).transpose() * Q;
+    Z.block(0, nSize, nSize, nSize) = -B* R.inverse()* B.transpose()* (A.inverse()).transpose();
+    Z.block(nSize, 0, nSize, nSize) = -(A.inverse()).transpose()* Q;
+    Z.block(nSize, nSize, nSize, nSize) = (A.inverse()).transpose();
+
+    eZMPSolver.compute(Z, true);
+
+    Eigen::MatrixXcd U(nSize* 2, nSize);
+    unsigned int j=0;
+    for (unsigned int i=0; i<nSize* 2; i++)
+    {
+        std::complex<double> eigenvalue = eZMPSolver.eigenvalues()[i];
+        double dReal = eigenvalue.real();
+        double dImag = eigenvalue.imag();
+
+        if( std::sqrt((dReal* dReal) + (dImag* dImag)) < 1.0)
+        {
+            U.block(0, j, nSize* 2, 1) = eZMPSolver.eigenvectors().col(i);
+            j++;
+        }
+    }
+    if(j != nSize)
+    {
+        printf("Warning! ******* Pelvis Planning *******\n");
+    }
+
+    Eigen::MatrixXcd U1 = U.block(0, 0, nSize, nSize);
+    Eigen::MatrixXcd U2 = U.block(nSize, 0, nSize, nSize);
+
+    Eigen::MatrixXcd X = U2 * U1.inverse();
+
+    return X.real();
+}
