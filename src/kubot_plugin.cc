@@ -77,7 +77,7 @@ typedef struct _AngleAxis{
 VectorXd q_cal2; //not using
 
 //* Time Variables ****
-double T = 1;        //sec
+double T = 3;        //sec
 double t = T + 1.0;
 double dt_ms = 1.0;  //ms
 
@@ -2197,7 +2197,7 @@ void gazebo::rok3_plugin::jointController()
     R_Ankle_pitch_joint->SetForce(1, joint[RAP].targetTorque);
     R_Ankle_roll_joint->SetForce(1, joint[RAR].targetTorque);
     //torso_joint->SetForce(0, joint[WST].targetTorque);
-    ROS_WARN("torque: %lf",joint[RAR].targetTorque);
+    //ROS_WARN("torque: %lf",joint[RAR].targetTorque);
 }
 
 void gazebo::rok3_plugin::GetJoints()
@@ -2638,14 +2638,16 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
     MatrixXd Foot_R(4,4);
 
     double body_z = z_c;//0.5;//m
-    double foot_z = 0.0; //m
+    double L_foot_z = 0.0; //m
+    double R_foot_z = 0.0; //m
     double foot_y = L1;//m
     double foot_x = 0;//m
 
     double step_length = 0.05;
     double step_height = 0.1;
 
-    if((phase == 1) && time_index < n-N){
+    if((phase == 1) && time_index < n-N){ //use Preview Control
+
       zmp_error.x = zmp.x - get_zmp_ref(time_index).x;
       zmp_error.y = zmp.y - get_zmp_ref(time_index).y;
 
@@ -2688,14 +2690,14 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
              0,0,1, body_z,
              0,0,0,      1;
 
-    Foot_L <<1,0,0,       0,
-             0,1,0, -foot_y,
-             0,0,1,  foot_z,
-             0,0,0,       1;
+    Foot_L <<1,0,0,         0,
+             0,1,0,    foot_y,
+             0,0,1,  L_foot_z,
+             0,0,0,         1;
 
     Foot_R <<1,0,0,      0,
-             0,1,0, foot_y,
-             0,0,1, foot_z,
+             0,1,0, -foot_y,
+             0,0,1, R_foot_z,
              0,0,0,      1;
 
     VectorXd q_L(6);
@@ -2703,8 +2705,8 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
     VectorXd init(6);
     init<<0,0,0,0,0,0;
 
-    q_L = IK_Geometric(Body, -L1, L3, L4, L5, Foot_L);
-    q_R = IK_Geometric(Body, L1, L3, L4, L5, Foot_R);
+    q_L = IK_Geometric(Body, L1, L3, L4, L5, Foot_L);
+    q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
 
     //t = 0.0;
     if(phase == 0){
@@ -2715,42 +2717,51 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       }
       else {
         phase++;
+        t = 0;
       }
     }
     else if(phase == 1){
+
       if(time_index >= n-N){
         FILE *fp; // DH : for save the data
-        fp = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/zmp_and_com_data.txt", "w");
+        fp = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/zmp_com_l_footup.txt", "w");
         for(int i=0;i<save.size();i++){
           if(i == 0){
             fprintf(fp,"time\t");
             fprintf(fp,"zmp_ref_y\t");
             fprintf(fp,"zmp_y\t");
-            fprintf(fp,"COM_y\n");
+            fprintf(fp,"COM_y\t");
+            fprintf(fp,"r_Foot_z\n");
           }
           fprintf(fp, "%.4f\t", save[i][0]); //time
           fprintf(fp, "%.4f\t", save[i][1]); //zmp_ref_y
           fprintf(fp, "%.4f\t", save[i][2]); //zmp y
-          fprintf(fp, "%.4f\n", save[i][3]); //CoM y
+          fprintf(fp, "%.4f\t", save[i][3]); //CoM y
+          fprintf(fp, "%.4f\n", save[i][4]); //r_foot_z
         }
-        printf("save complete! \n");
-        printf("save complete!! \n");
-        printf("save complete!!! \n");
-        printf("save complete!!!! \n");
-        printf("save complete!!!!! \n");
-        printf("save complete!!!!!! \n");
-        printf("save complete!!!!!!! \n");
         fclose(fp);
 
         phase++;
 
       }
 
+      if(time_index*dt > 5){
+        R_foot_z = func_1_cos(t,0,foot_height,T);
+        Foot_R <<1,0,0,      0,
+                 0,1,0, -foot_y,
+                 0,0,1,  R_foot_z,
+                 0,0,0,      1;
+        q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
+        if(t < T) t+=dt;
+      }
+
+
       std::vector<double> data;
       data.push_back(time_index*dt);
       data.push_back(get_zmp_ref(time_index).y);
       data.push_back(zmp.y);
       data.push_back(CoM.y);
+      data.push_back(R_foot_z);
       save.push_back(data);
 
       time_index++;
@@ -2815,11 +2826,36 @@ struct XY get_zmp_ref(int step_time_index){
   struct XY zmp_ref;
 
   double time = dt*step_time_index;
+  /*
   if(time<3){
     zmp_ref.x = 0;
     zmp_ref.y = 0;
   }
+  else if(time<3.5){
+    zmp_ref.x  = 0;
+    zmp_ref.y = L1;
+  }
+  else if(time<4){
+    zmp_ref.x  = 0;
+    zmp_ref.y = -L1;
+  }
+  else if(time<4.5){
+    zmp_ref.x  = 0;
+    zmp_ref.y = L1;
+  }
   else if(time<5){
+    zmp_ref.x  = 0;
+    zmp_ref.y = -L1;
+  }
+  else if(time<5.5){
+    zmp_ref.x  = 0;
+    zmp_ref.y = L1;
+  }
+  else if(time<6){
+    zmp_ref.x  = 0;
+    zmp_ref.y = -L1;
+  }
+  else if(time<6.5){
     zmp_ref.x  = 0;
     zmp_ref.y = L1;
   }
@@ -2827,21 +2863,25 @@ struct XY get_zmp_ref(int step_time_index){
     zmp_ref.x  = 0;
     zmp_ref.y = -L1;
   }
-  else if(time<9){
+  else if(time<7.5){
     zmp_ref.x  = 0;
     zmp_ref.y = L1;
   }
-  else if(time<11){
+  else if(time<8){
     zmp_ref.x  = 0;
     zmp_ref.y = -L1;
-  }
-  else if(time<12){
-    zmp_ref.x  = 0;
-    zmp_ref.y = L1;
   }
   else{
     zmp_ref.x = 0;
     zmp_ref.y = 0;
+  }
+  */
+
+  zmp_ref.x = 0;
+  zmp_ref.y = 0;;
+  if(time>5){
+    zmp_ref.x = 0;
+    zmp_ref.y = L1;
   }
 
   return zmp_ref;

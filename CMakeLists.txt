@@ -57,7 +57,7 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-   src/rok3_plugin.cc
+   src/kubot_plugin.cc
 )
 
 ## Specify libraries to link a library or executable target against
