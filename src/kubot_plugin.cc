@@ -204,6 +204,7 @@ void set_Weight_Q(void);
 void get_gain_G(void);
 void initialize_CoM_State_Zero(void);
 void initialize_starting_ZMP_Zero(void);
+void Preview_Init_Setting(void);
 MatrixXd ZMP_DARE(Eigen::Matrix4d A, Eigen::Vector4d B, Eigen::Matrix4d Q, MatrixXd R);
 
 
@@ -1502,16 +1503,7 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
 
 
     /*** Initial setting for Preview Control ***/
-    set_system_model();
-    std::cout<<"1"<<std::endl;
-    set_Weight_Q();
-    std::cout<<"2"<<std::endl;
-    get_gain_G();
-    std::cout<<"3"<<std::endl;
-    initialize_CoM_State_Zero();
-    std::cout<<"4"<<std::endl;
-    initialize_starting_ZMP_Zero();
-    std::cout<<"5"<<std::endl;
+    Preview_Init_Setting();
 
 
 
@@ -2924,36 +2916,30 @@ void initialize_starting_ZMP_Zero(void){
 }
 
 void get_gain_G(void){
-  std::cout<<"a"<<std::endl;
+
   BB << (C*B)(0,0),\
         B(0,0),\
         B(1,0),\
         B(2,0);
-  std::cout<<"b"<<std::endl;
+
   II <<1,\
        0,\
        0,\
        0;
-  std::cout<<"c"<<std::endl;
+
   FF.block(0,0,1,3) = C*A;
-  std::cout<<"c2"<<std::endl;
   FF.block(1,0,3,3) = A;
-  std::cout<<"d"<<std::endl;
 
   AA.block(0,0,4,1) = II;
-  std::cout<<"e"<<std::endl;
   AA.block(0,1,4,3) = FF;
-  std::cout<<"f"<<std::endl;
 
   KK = ZMP_DARE(AA,BB,Q,R);
-  std::cout<<"g"<<std::endl;
+
   Gi = (R + (BB.transpose()*KK*BB)).inverse()*(BB.transpose()*KK*II);
-  std::cout<<"h"<<std::endl;
   Gx = (R + (BB.transpose()*KK*BB)).inverse()*(BB.transpose()*KK*FF);
-  std::cout<<"i"<<std::endl;
   AAc = AA - BB*((R + (BB.transpose()*KK*BB)).inverse())*BB.transpose()*KK*AA;
 
-  std::cout<<"j"<<std::endl;
+
   for(int i=0;i<N;i++){
     if(i==0){
       XX = -AAc.transpose()*KK*II;
@@ -2965,7 +2951,7 @@ void get_gain_G(void){
     }
 
 
-
+    /** this is for data save **/
     FILE *fp2; // DH : for save the data
     fp2 = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/Gp.txt", "w");
     fprintf(fp2, "index\t");
@@ -2974,12 +2960,18 @@ void get_gain_G(void){
       fprintf(fp2,"%d\t",i);
       fprintf(fp2, "%.4f\n", Gp(i)); //time
     }
-
     fclose(fp2);
+
   }
 
+}
 
-
+void Preview_Init_Setting(void){
+  set_system_model();
+  set_Weight_Q();;
+  get_gain_G();
+  initialize_CoM_State_Zero();
+  initialize_starting_ZMP_Zero();
 }
 
 MatrixXd ZMP_DARE(Eigen::Matrix4d A, Eigen::Vector4d B, Eigen::Matrix4d Q, MatrixXd R)//Kookmin.Univ Preview
