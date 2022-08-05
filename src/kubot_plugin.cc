@@ -2757,14 +2757,38 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       }
     }
     else if(phase == 1){
-
+/*
+      Body <<  1,0,0,  CoM.x,
+               0,1,0,  CoM.y,
+               0,0,1, body_z,
+               0,0,0,      1;
+*/
       Body <<  1,0,0,  CoM.x,
                0,1,0,  CoM.y,
                0,0,1, body_z,
                0,0,0,      1;
 
-      Foot_L = FootPlaner.get_Left_foot(t*dt);
-      Foot_R = FootPlaner.get_Right_foot(t*dt);
+    // Foot_L <<1,0,0,         0,
+    //          0,1,0,    foot_y,
+    //          0,0,1,  L_foot_z,
+    //          0,0,0,         1;
+    //
+    // Foot_R <<1,0,0,      0,
+    //          0,1,0, -foot_y,
+    //          0,0,1, R_foot_z,
+    //          0,0,0,      1;
+
+      Foot_L = FootPlaner.get_Left_foot(time_index*dt);
+      Foot_R = FootPlaner.get_Right_foot(time_index*dt);
+
+      //std::cout<<"Foot_L"<<std::endl;
+      //std:cout<<Foot_L<<std::endl;
+
+      test_msg_L_z.data = Foot_R(2,3);
+      test_msg_R_z.data = 0;//Foot_R(1,3);
+
+      test_pub_L_z.publish(test_msg_L_z);
+      test_pub_R_z.publish(test_msg_R_z);
 
 
       VectorXd q_L(6);

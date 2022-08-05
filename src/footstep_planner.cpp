@@ -1,7 +1,7 @@
 #include "footstep_planner.h"
 
 FootstepPlanner::FootstepPlanner()
-  : fb_step_size(0.1), //m
+  : fb_step_size(0.05), //m
     step_time(1.0),    //sec
     step_num(10),      //step number
     start_foot(0),     //left : 0 right : 1
@@ -137,6 +137,7 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
     global_x = 0.0;
     global_y = 0.05; // foot_distance /2
     global_z = 0.0;
+    global_yaw = 0;
   }
   else{
 
@@ -155,7 +156,7 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
         double pre_time = step_time * (double)step_index_n;
         double dsp_time = step_time * dsp_ratio;
         double half_dsp_time = 0.5*dsp_time;
-        double foot_height= 0.1;
+        double foot_height = 0.05;//0.1;
         if(step_index_n == 0){
           double foot_distance = 0.1;
           //double foot_height = 0.1;
@@ -197,11 +198,11 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
                         s, c,0,y,\
                         0, 0,1,0,
                         0, 0,0,1;
-          double angle = PI/2; //left foot is side foot
-          side_foot_TF << cos(angle), sin(angle), 0, 0,\
-                          sin(angle), cos(angle), 0, foot_distance,\
-                                   0,          0, 0, 0,\
-                                   0,          0, 0, 1;
+          double angle = 0;//PI/2; //left foot is side foot
+          side_foot_TF << cos(angle), -sin(angle), 0, 0,\
+                          sin(angle),  cos(angle), 0, foot_distance,\
+                                   0,           0, 1, 0,\
+                                   0,           0, 0, 1;
           side_foot_global_TF = last_foot_TF * side_foot_TF;
 
           double next_x = side_foot_global_TF(0,3);
@@ -232,7 +233,7 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
 
         }
 
-        else if(step_index_n > 0 or step_index_n < step_num-1){
+        else if(step_index_n > 0 and step_index_n < step_num-1){
           int pre_step_index = step_index_n-1;
           int next_step_index = step_index_n+1;
 
@@ -270,7 +271,7 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
   C = cos(global_yaw);
   LeftFoot<<C, -S, 0, global_x,\
             S,  C, 0, global_y,\
-            0,  0, 0, global_z,\
+            0,  0, 1, global_z,\
             0,  0, 0, 1;
   return LeftFoot;
 
@@ -286,8 +287,9 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
   double global_x, global_y, global_z, global_yaw;
   if(t < preview_start_wait_time){  //wait when start for preview
     global_x = 0.0;
-    global_y = 0.05; // foot_distance /2
+    global_y = -0.05; // foot_distance /2
     global_z = 0.0;
+    global_yaw = 0;
   }
   else{
     t = t - preview_start_wait_time;
@@ -305,7 +307,7 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
         double pre_time = step_time * (double)step_index_n;
         double dsp_time = step_time * dsp_ratio;
         double half_dsp_time = 0.5*dsp_time;
-        double foot_height=0.1;
+        double foot_height=0.05;//0.1;
 
         if(step_index_n == 0){  //when starting
           double foot_distance = 0.1;
@@ -349,7 +351,7 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
           double angle = 0;//PI/2; //left foot is side foot          //for right*/
           side_foot_TF << cos(angle), sin(angle), 0, 0,\
                           sin(angle), cos(angle), 0, -foot_distance,\
-                                   0,          0, 0, 0,\
+                                   0,          0, 1, 0,\
                                    0,          0, 0, 1;
           side_foot_global_TF = last_foot_TF * side_foot_TF;
 
@@ -419,7 +421,7 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
   C = cos(global_yaw);
   RightFoot<<C, -S, 0, global_x,\
             S,  C, 0, global_y,\
-            0,  0, 0, global_z,\
+            0,  0, 1, global_z,\
             0,  0, 0, 1;
   return RightFoot;
 
