@@ -47,7 +47,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+ include
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
@@ -58,6 +58,7 @@ include_directories(
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
    src/kubot_plugin.cc
+   src/footstep_planner.cpp
 )
 
 ## Specify libraries to link a library or executable target against

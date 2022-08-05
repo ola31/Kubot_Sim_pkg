@@ -14,15 +14,15 @@
         </solver>
       </ode>
     </physics>
- 
+
     <include>
       <uri>model://ground_plane</uri>
     </include>
- 
+
     <include>
       <uri>model://sun</uri>
     </include>
- 
+
     <include>
       <uri>model://kubot22</uri>
       <!--<pose frame=''>0 0 1.947 0 0 0</pose>-->

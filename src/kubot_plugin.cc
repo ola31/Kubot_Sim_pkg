@@ -41,6 +41,7 @@
 #include <rbdl/addons/urdfreader/urdfreader.h> // urdf model read using RBDL
 #include <Eigen/Dense> // Eigen is a C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
 
+#include "footstep_planner.h"
 
 #define PI      3.141592
 #define D2R     PI/180.
@@ -151,11 +152,12 @@ double L4 = 0.138;
 double L5 = 0.037;
 
 /********************* Preview Control ************************/
-
+/*
 struct XY{
   double x;
   double y;
 };
+*/
 
 double All_time_trajectory = 15.0;  //(sec)
 double dt = 0.001;  //sampling time
@@ -215,6 +217,9 @@ std::vector<std::vector<double>> save;
 
 /*****************************************************************/
 
+//Foot step Planner
+FootstepPlanner FootPlaner;
+
 
 namespace gazebo
 {
@@ -260,12 +265,22 @@ namespace gazebo
         ros::Publisher LAP_pub;
         ros::Publisher LAR_pub;
 
+        ros::Publisher test_pub;
+        ros::Publisher test_pub2;
+        ros::Publisher test_pub_L_z;
+        ros::Publisher test_pub_R_z;
+
         std_msgs::Float64 LHY_msg;
         std_msgs::Float64 LHR_msg;
         std_msgs::Float64 LHP_msg;
         std_msgs::Float64 LKN_msg;
         std_msgs::Float64 LAP_msg;
         std_msgs::Float64 LAR_msg;
+
+        std_msgs::Float64 test_msg;
+        std_msgs::Float64 test_msg2;
+        std_msgs::Float64 test_msg_L_z;
+        std_msgs::Float64 test_msg_R_z;
 
 
 
@@ -1501,6 +1516,10 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
     LAP_pub = nh.advertise<std_msgs::Float64>("command_joint/LAP", 1000);
     LAR_pub = nh.advertise<std_msgs::Float64>("command_joint/LHR", 1000);
 
+    test_pub = nh.advertise<std_msgs::Float64>("kubotsim/test", 1000);
+    test_pub2 = nh.advertise<std_msgs::Float64>("kubotsim/test2", 1000);
+    test_pub_L_z = nh.advertise<std_msgs::Float64>("kubotsim/test_L_z", 1000);
+    test_pub_R_z = nh.advertise<std_msgs::Float64>("kubotsim/test_R_z", 1000);
 
     /*** Initial setting for Preview Control ***/
     Preview_Init_Setting();
@@ -1516,11 +1535,24 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
         last_update_time = model->GetWorld()->GetSimTime();
     #endif
 
-    update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm, this));
+    //update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm, this));
     //update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm2, this));
     update_connection = event::Events::ConnectWorldUpdateBegin(boost::bind(&rok3_plugin::UpdateAlgorithm3, this));
     
     Practice();
+
+    FootPlaner.Plan();
+/*
+    FootstepPlanner f;
+    f.Plan();
+    int step_num = f.get_step_num();
+    for(int i=0;i<f.FootSteps.size();i++){
+      double x =   f.FootSteps[i][0];
+      double y =   f.FootSteps[i][1];
+      double yaw = f.FootSteps[i][2];
+      printf("(%.4lf, %.4lf, %.4lf)\n",x,y,yaw);
+    }
+*/
 
     t = 0.0;
 
@@ -2621,6 +2653,20 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
     //* setting for getting dt at next step
     last_update_time = current_time;
 
+    //MatrixXd leftfoot(4,4);
+    //MatrixXd rightfoot(4,4);
+    //leftfoot = FootPlaner.get_Left_foot(time);
+    //rightfoot = FootPlaner.get_Right_foot(time);
+
+    ///test_msg.data = leftfoot(0,3);
+    ///test_msg2.data = rightfoot(0,3);
+    ///test_msg_L_z.data = leftfoot(2,3);
+    ///test_msg_R_z.data = rightfoot(2,3);
+    ///test_pub.publish(test_msg);
+    ///test_pub2.publish(test_msg2);
+    ///test_pub_L_z.publish(test_msg_L_z);
+    ///test_pub_R_z.publish(test_msg_R_z);
+
 
     //* Read Sensors data
    GetjointData();
@@ -2640,15 +2686,15 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
 
     if((phase == 1) && time_index < n-N){ //use Preview Control
 
-      zmp_error.x = zmp.x - get_zmp_ref(time_index).x;
-      zmp_error.y = zmp.y - get_zmp_ref(time_index).y;
+      zmp_error.x = zmp.x - FootPlaner.get_zmp_ref(time_index*dt).x;
+      zmp_error.y = zmp.y - FootPlaner.get_zmp_ref(time_index*dt).y;
 
       sum_error.x = sum_error.x + zmp_error.x;
       sum_error.y = sum_error.y + zmp_error.y;
 
       for(int j=0;j<N;j++){
-        u_sum_p.x = u_sum_p.x + Gp(j)*get_zmp_ref(time_index + j + 1).x;
-        u_sum_p.y = u_sum_p.y + Gp(j)*get_zmp_ref(time_index + j + 1).y;
+        u_sum_p.x = u_sum_p.x + Gp(j)*FootPlaner.get_zmp_ref(dt*(time_index + j + 1)).x;
+        u_sum_p.y = u_sum_p.y + Gp(j)*FootPlaner.get_zmp_ref(dt*(time_index + j + 1)).y;
       }
 
       input_u.x = -Gi(0,0)*sum_error.x - (Gx*State_X)(0,0) - u_sum_p.x;
@@ -2671,38 +2717,36 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
 
      }
 
-    std::cout<<"com_y : "<<CoM.y<<std::endl;
+    //std::cout<<"com_y : "<<CoM.y<<std::endl;
 
 
 
-
-
-    Body <<  1,0,0,  CoM.x,
-             0,1,0,  CoM.y,
-             0,0,1, body_z,
-             0,0,0,      1;
-
-    Foot_L <<1,0,0,         0,
-             0,1,0,    foot_y,
-             0,0,1,  L_foot_z,
-             0,0,0,         1;
-
-    Foot_R <<1,0,0,      0,
-             0,1,0, -foot_y,
-             0,0,1, R_foot_z,
-             0,0,0,      1;
-
-    VectorXd q_L(6);
-    VectorXd q_R(6);
-    VectorXd init(6);
-    init<<0,0,0,0,0,0;
-
-    q_L = IK_Geometric(Body, L1, L3, L4, L5, Foot_L);
-    q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
 
     //t = 0.0;
     if(phase == 0){
       if(t<T){
+        Body <<  1,0,0,  CoM.x,
+                 0,1,0,  CoM.y,
+                 0,0,1, body_z,
+                 0,0,0,      1;
+
+        Foot_L <<1,0,0,         0,
+                 0,1,0,    foot_y,
+                 0,0,1,  L_foot_z,
+                 0,0,0,         1;
+
+        Foot_R <<1,0,0,      0,
+                 0,1,0, -foot_y,
+                 0,0,1, R_foot_z,
+                 0,0,0,      1;
+
+        VectorXd q_L(6);
+        VectorXd q_R(6);
+        VectorXd init(6);
+        init<<0,0,0,0,0,0;
+
+        q_L = IK_Geometric(Body, L1, L3, L4, L5, Foot_L);
+        q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
         q_command_L = func_1_cos(t,init,q_L,T);
         q_command_R = func_1_cos(t,init,q_R,T);
         t += dt;
@@ -2713,6 +2757,23 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       }
     }
     else if(phase == 1){
+
+      Body <<  1,0,0,  CoM.x,
+               0,1,0,  CoM.y,
+               0,0,1, body_z,
+               0,0,0,      1;
+
+      Foot_L = FootPlaner.get_Left_foot(t*dt);
+      Foot_R = FootPlaner.get_Right_foot(t*dt);
+
+
+      VectorXd q_L(6);
+      VectorXd q_R(6);
+      VectorXd init(6);
+      init<<0,0,0,0,0,0;
+
+      q_L = IK_Geometric(Body, L1, L3, L4, L5, Foot_L);
+      q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
 
       if(time_index >= n-N){
         FILE *fp; // DH : for save the data
@@ -2736,7 +2797,7 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
         phase++;
 
       }
-
+/*
       if(time_index*dt > 5){
         R_foot_z = func_1_cos(t,0,foot_height,T);
         Foot_R <<1,0,0,      0,
@@ -2746,7 +2807,7 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
         q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
         if(t < T) t+=dt;
       }
-
+*/
 
       std::vector<double> data;
       data.push_back(time_index*dt);
