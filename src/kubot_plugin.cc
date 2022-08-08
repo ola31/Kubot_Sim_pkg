@@ -159,12 +159,12 @@ struct XY{
 };
 */
 
-double All_time_trajectory = 15.0;  //(sec)
+double All_time_trajectory = 100;//15.0;  //(sec)
 double dt = 0.001;  //sampling time
 int N = 1000;  //preview NL
 int n = (int)((double)All_time_trajectory/dt)+1;
 
-double z_c = 0.2; //Height of CoM
+double z_c = 0.22; //Height of CoM
 double g = 9.81; //Gravity Acceleration
 
 MatrixXd A(3,3);
@@ -270,6 +270,11 @@ namespace gazebo
         ros::Publisher test_pub_L_z;
         ros::Publisher test_pub_R_z;
 
+        ros::Publisher zmp_y_pub;
+        ros::Publisher L_foot_z_pub;
+        ros::Publisher R_foot_z_pub;
+        ros::Publisher foot_x_pub;
+
         std_msgs::Float64 LHY_msg;
         std_msgs::Float64 LHR_msg;
         std_msgs::Float64 LHP_msg;
@@ -281,6 +286,11 @@ namespace gazebo
         std_msgs::Float64 test_msg2;
         std_msgs::Float64 test_msg_L_z;
         std_msgs::Float64 test_msg_R_z;
+
+        std_msgs::Float64 zmp_y_msg;
+        std_msgs::Float64 L_foot_z_msg;
+        std_msgs::Float64 R_foot_z_msg;
+        std_msgs::Float64 foot_x_msg;
 
 
 
@@ -1518,8 +1528,12 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
 
     test_pub = nh.advertise<std_msgs::Float64>("kubotsim/test", 1000);
     test_pub2 = nh.advertise<std_msgs::Float64>("kubotsim/test2", 1000);
-    test_pub_L_z = nh.advertise<std_msgs::Float64>("kubotsim/test_L_z", 1000);
-    test_pub_R_z = nh.advertise<std_msgs::Float64>("kubotsim/test_R_z", 1000);
+    test_pub_L_z = nh.advertise<std_msgs::Float64>("kubotsim/CoM_y", 1000);
+    test_pub_R_z = nh.advertise<std_msgs::Float64>("kubotsim/zmp_y", 1000);
+
+    zmp_y_pub = nh.advertise<std_msgs::Float64>("kubotsim/zmp_y_ref", 1000);
+    L_foot_z_pub = nh.advertise<std_msgs::Float64>("kubotsim/L_foot_z", 1000);
+    R_foot_z_pub = nh.advertise<std_msgs::Float64>("kubotsim/R_foot_z", 1000);
 
     /*** Initial setting for Preview Control ***/
     Preview_Init_Setting();
@@ -2367,12 +2381,12 @@ void gazebo::rok3_plugin::SetJointPIDgain()
     /*
      * Set each joint PID gain for joint control
      */
-    joint[LHY].Kp = 120.0;
-    joint[LHR].Kp = 140.0;
-    joint[LHP].Kp = 140.0;
-    joint[LKN].Kp = 140.0;
-    joint[LAP].Kp = 140.0;
-    joint[LAR].Kp = 140.0;
+    joint[LHY].Kp = 130.0;
+    joint[LHR].Kp = 270.0;
+    joint[LHP].Kp = 260.0;
+    joint[LKN].Kp = 170.0;
+    joint[LAP].Kp = 180.0;
+    joint[LAR].Kp = 170.0;
 
     joint[RHY].Kp = joint[LHY].Kp;
     joint[RHR].Kp = joint[LHR].Kp;
@@ -2384,10 +2398,10 @@ void gazebo::rok3_plugin::SetJointPIDgain()
     //joint[WST].Kp = 2* 2.;
  
     joint[LHY].Kd =   0.8;
-    joint[LHR].Kd =   0.8;
-    joint[LHP].Kd =   0.8;
-    joint[LKN].Kd =   0.8;
-    joint[LAP].Kd =   0.8;
+    joint[LHR].Kd =   1.8;
+    joint[LHP].Kd =   1.7;
+    joint[LKN].Kd =   1.0;
+    joint[LAP].Kd =   1.0;
     joint[LAR].Kd =   0.5;
 
     joint[RHY].Kd = joint[LHY].Kd;
@@ -2784,11 +2798,19 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       //std::cout<<"Foot_L"<<std::endl;
       //std:cout<<Foot_L<<std::endl;
 
-      test_msg_L_z.data = Foot_R(2,3);
-      test_msg_R_z.data = 0;//Foot_R(1,3);
+      test_msg_L_z.data = CoM.y; //Foot_R(0,3);
+      test_msg_R_z.data = zmp.y;//Foot_R(1,3);
 
       test_pub_L_z.publish(test_msg_L_z);
       test_pub_R_z.publish(test_msg_R_z);
+
+      zmp_y_msg.data = FootPlaner.get_zmp_ref(time_index*dt).y;
+      L_foot_z_msg.data = Foot_L(2,3);
+      R_foot_z_msg.data = Foot_R(2,3);
+
+      L_foot_z_pub.publish(L_foot_z_msg);
+      R_foot_z_pub.publish(R_foot_z_msg);
+      zmp_y_pub.publish(zmp_y_msg);
 
 
       VectorXd q_L(6);

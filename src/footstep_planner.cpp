@@ -1,17 +1,19 @@
 #include "footstep_planner.h"
 
 FootstepPlanner::FootstepPlanner()
-  : fb_step_size(0.05), //m
-    step_time(1.0),    //sec
+  : fb_step_size(0.03), //m
+    step_time(1.4),    //sec
     step_num(10),      //step number
     start_foot(0),     //left : 0 right : 1
-    dsp_ratio(0.2),
-    goal_turn_angle(0) //radian
+    dsp_ratio(0.3),
+    goal_turn_angle(0), //radian
+    foot_height(0.05),     //m
+    foot_distance(0.1) //m
 {
 
 }
 
-FootstepPlanner::FootstepPlanner(double fb_step_size_, double step_time_, double step_num_, double start_foot_, double dsp_ratio_, double goal_turn_angle_){
+FootstepPlanner::FootstepPlanner(double fb_step_size_, double step_time_, double step_num_, int start_foot_, double dsp_ratio_, double goal_turn_angle_, double foot_height){
   fb_step_size = fb_step_size_;
   step_time = step_time_;
   step_num = step_num_;
@@ -46,7 +48,7 @@ void FootstepPlanner::Plan(){
 
   //NextFoot = MatrixXd::Identity(4,4);
 
-  double foot_distance = 0.1;
+  //double foot_distance = 0.1;
 
   double Del_X,Del_Y;
   double unit_turn_angle = goal_turn_angle/step_num;
@@ -156,9 +158,9 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
         double pre_time = step_time * (double)step_index_n;
         double dsp_time = step_time * dsp_ratio;
         double half_dsp_time = 0.5*dsp_time;
-        double foot_height = 0.05;//0.1;
+        //double foot_height = 0.02;//0.1;
         if(step_index_n == 0){
-          double foot_distance = 0.1;
+          //double foot_distance = 0.1;
           //double foot_height = 0.1;
           double pre_x = 0.0;
           double pre_y = FootSteps[step_index_n][1] + foot_distance;
@@ -184,7 +186,9 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
           }
         }
         else if(step_index_n == step_num-1){
-          double foot_distance = 0.1;
+
+          last_foot == 1; //last foot : right, side foot : left
+          //double foot_distance = 0.1;
           //double foot_height = 0.1;
 
           MatrixXd last_foot_TF(4,4);
@@ -208,6 +212,10 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
           double next_x = side_foot_global_TF(0,3);
           double next_y = side_foot_global_TF(1,3);
           double next_yaw = FootSteps[step_index_n][2];
+
+          last_side_foot.push_back(next_x);
+          last_side_foot.push_back(next_y);
+          last_side_foot.push_back(next_yaw);
 
 
           int pre_step_index = step_index_n-1;
@@ -259,11 +267,18 @@ MatrixXd FootstepPlanner::get_Left_foot(double t){
       }
     }
     else{ //must be modified
-      global_x   = FootSteps[9][0];
-      global_y   = FootSteps[9][1];
-      global_z   = 0.0;
-      global_yaw = FootSteps[9][2];
-
+      if(last_foot == 0){ //last foot is left_foot, than right is side foot
+        global_x   = FootSteps[step_num-1][0];
+        global_y   = FootSteps[step_num-1][1];
+        global_z   = 0.0;
+        global_yaw = FootSteps[step_num-1][2];
+      }
+      else{               //last foot is right_foot, than left is side foot
+        global_x   = last_side_foot[0];
+        global_y   = last_side_foot[1];
+        global_z   = 0.0;
+        global_yaw = last_side_foot[2];
+      }
     }
   }
   double S,C;
@@ -307,10 +322,10 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
         double pre_time = step_time * (double)step_index_n;
         double dsp_time = step_time * dsp_ratio;
         double half_dsp_time = 0.5*dsp_time;
-        double foot_height=0.05;//0.1;
+        //double foot_height=0.02;//0.1;
 
         if(step_index_n == 0){  //when starting
-          double foot_distance = 0.1;
+          //double foot_distance = 0.1;
           double pre_x = 0.0;
           double pre_y = FootSteps[step_index_n][1] - foot_distance; //for right foot
           double pre_yaw = 0;
@@ -335,7 +350,9 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
           }
         }
         else if(step_index_n == step_num-1){ //when finishing
-          double foot_distance = 0.1;
+          //double foot_distance = 0.1;
+
+          last_foot = 0; //last foot : left, side foot : right
 
           MatrixXd last_foot_TF(4,4);
           MatrixXd side_foot_TF(4,4);
@@ -349,7 +366,7 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
                         0, 0,1,0,
                         0, 0,0,1;
           double angle = 0;//PI/2; //left foot is side foot          //for right*/
-          side_foot_TF << cos(angle), sin(angle), 0, 0,\
+          side_foot_TF << cos(angle), -sin(angle), 0, 0,\
                           sin(angle), cos(angle), 0, -foot_distance,\
                                    0,          0, 1, 0,\
                                    0,          0, 0, 1;
@@ -359,6 +376,9 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
           double next_y = side_foot_global_TF(1,3);
           double next_yaw = FootSteps[step_index_n][2];
 
+          last_side_foot.push_back(next_x);
+          last_side_foot.push_back(next_y);
+          last_side_foot.push_back(next_yaw);
 
           int pre_step_index = step_index_n-1;
           if(half_dsp_time<=t-pre_time and t-pre_time<=(step_time-half_dsp_time)){
@@ -409,11 +429,18 @@ MatrixXd FootstepPlanner::get_Right_foot(double t){
       }
     }
     else{ //must be modified
-      global_x   = FootSteps[9][0];
-      global_y   = FootSteps[9][1];
-      global_z   = 0.0;
-      global_yaw = FootSteps[9][2];
-
+      if(last_foot == 0){ //last foot is left_foot, than right is side foot
+        global_x   = last_side_foot[0];
+        global_y   = last_side_foot[1];
+        global_z   = 0.0;
+        global_yaw = last_side_foot[2];
+      }
+      else{
+        global_x   = FootSteps[step_num-1][0];
+        global_y   = FootSteps[step_num-1][1];
+        global_z   = 0.0;
+        global_yaw = FootSteps[step_num-1][2];
+      }
     }
   }
   double S,C;

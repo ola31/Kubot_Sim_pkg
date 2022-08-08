@@ -27,10 +27,15 @@ private:
   double fb_step_size;
   double step_time;
   double step_num;
-  double start_foot;
+  int start_foot;
   double dsp_ratio;
   double goal_turn_angle;
+  double foot_height;
+  double foot_distance;
   //vector<vector<double>> FootSteps;
+
+  int last_foot;
+  vector<double> last_side_foot;
 
 
 
@@ -38,7 +43,7 @@ private:
 public:
   vector<vector<double>> FootSteps;
   FootstepPlanner();
-  FootstepPlanner(double fb_step_size_, double step_time_, double step_num_, double start_foot_, double dsp_ratio_, double goal_turn_angle_);
+  FootstepPlanner(double fb_step_size_, double step_time_, double step_num_, int start_foot_, double dsp_ratio_, double goal_turn_angle_,double foot_height);
 
   void set_fb_step_size(double fb_step_size_);
   void set_step_time(double step_time_);
