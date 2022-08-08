@@ -255,10 +255,11 @@ namespace gazebo
 
         physics::JointPtr LS, RS;
 
+        //YAML_CONFIG_READER PD_gain_from_yaml;
+
         /* ROS */
 
         ros::NodeHandle nh;
-
 
         ros::Publisher LHY_pub;
         ros::Publisher LHR_pub;
@@ -2380,11 +2381,12 @@ void gazebo::rok3_plugin::initializeJoint()
 
 void gazebo::rok3_plugin::SetJointPIDgain()
 {
-   PD_gain_from_yaml.getJoint_PD_gainFrom_yaml();
+   //YAML_CONFIG_READER PD_gain_from_yaml;
+    PD_gain_from_yaml.getJoint_PD_gainFrom_yaml();
     /*
      * Set each joint PID gain for joint control
      */
-  /*
+/*
     joint[LHY].Kp = 130.0;
     joint[LHR].Kp = 270.0;
     joint[LHP].Kp = 260.0;
@@ -2398,11 +2400,11 @@ void gazebo::rok3_plugin::SetJointPIDgain()
     joint[RKN].Kp = joint[LKN].Kp;
     joint[RAP].Kp = joint[LAP].Kp;
     joint[RAR].Kp = joint[LAR].Kp;
-    */
+*/
 
     //joint[WST].Kp = 2* 2.;
-  /*
- 
+
+/*
     joint[LHY].Kd =   0.8;
     joint[LHR].Kd =   1.8;
     joint[LHP].Kd =   1.7;
@@ -2416,7 +2418,7 @@ void gazebo::rok3_plugin::SetJointPIDgain()
     joint[RKN].Kd = joint[LKN].Kd;
     joint[RAP].Kd = joint[LAP].Kd;
     joint[RAR].Kd = joint[LAR].Kd;
-    */
+*/
 
    // joint[WST].Kd = 2.;
 
@@ -2447,6 +2449,7 @@ void gazebo::rok3_plugin::SetJointPIDgain()
   joint[RKN].Kd = joint[LKN].Kd;
   joint[RAP].Kd = joint[LAP].Kd;
   joint[RAR].Kd = joint[LAR].Kd;
+
 }
 
 

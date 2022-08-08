@@ -4,6 +4,7 @@ void YAML_CONFIG_READER::getJoint_PD_gainFrom_yaml(){
   std::string local_path(this->file_path);
   std::string path = this->pkg_path+local_path;
   YAML::Node doc = YAML::LoadFile(path);
+  std::cout<<path<<std::endl;
   double Pgain;
   double Dgain;
   try {

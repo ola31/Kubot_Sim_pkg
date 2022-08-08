@@ -8,7 +8,7 @@
 #include <string>
 #include <ros/package.h>
 
-#define JOINT_PD_GAIN_FILEPATH "/config/PD_gain.yaml"
+#define JOINT_PD_GAIN_FILEPATH "/config/pd_gain.yaml"
 
 enum
 {
@@ -30,7 +30,7 @@ private:
 
 public:
 
-  YAML_CONFIG_READER();
+ // YAML_CONFIG_READER();
   void getJoint_PD_gainFrom_yaml();
   double get_Kp(int joint_num);
   double get_Kd(int joint_num);

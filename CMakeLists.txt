@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(kubot_study_pkgs)
+project(kubot_study_pkg)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 #add_compile_options(-std=c++11)
@@ -36,7 +36,7 @@ find_package (Eigen3 REQUIRED)
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES kubot_study_pkgs
+  LIBRARIES kubot_study_pkg
   CATKIN_DEPENDS gazebo_ros roscpp rospy std_msgs roslib
 #  DEPENDS system_lib
 )
