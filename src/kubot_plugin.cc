@@ -42,6 +42,7 @@
 #include <Eigen/Dense> // Eigen is a C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
 
 #include "footstep_planner.h"
+#include "read_yaml.h"
 
 #define PI      3.141592
 #define D2R     PI/180.
@@ -219,6 +220,7 @@ std::vector<std::vector<double>> save;
 
 //Foot step Planner
 FootstepPlanner FootPlaner;
+YAML_CONFIG_READER PD_gain_from_yaml;
 
 
 namespace gazebo
@@ -2378,9 +2380,11 @@ void gazebo::rok3_plugin::initializeJoint()
 
 void gazebo::rok3_plugin::SetJointPIDgain()
 {
+   PD_gain_from_yaml.getJoint_PD_gainFrom_yaml();
     /*
      * Set each joint PID gain for joint control
      */
+  /*
     joint[LHY].Kp = 130.0;
     joint[LHR].Kp = 270.0;
     joint[LHP].Kp = 260.0;
@@ -2394,8 +2398,10 @@ void gazebo::rok3_plugin::SetJointPIDgain()
     joint[RKN].Kp = joint[LKN].Kp;
     joint[RAP].Kp = joint[LAP].Kp;
     joint[RAR].Kp = joint[LAR].Kp;
+    */
 
     //joint[WST].Kp = 2* 2.;
+  /*
  
     joint[LHY].Kd =   0.8;
     joint[LHR].Kd =   1.8;
@@ -2410,8 +2416,37 @@ void gazebo::rok3_plugin::SetJointPIDgain()
     joint[RKN].Kd = joint[LKN].Kd;
     joint[RAP].Kd = joint[LAP].Kd;
     joint[RAR].Kd = joint[LAR].Kd;
+    */
 
    // joint[WST].Kd = 2.;
+
+  joint[LHY].Kp = PD_gain_from_yaml.get_Kp(LHY);
+  joint[LHR].Kp = PD_gain_from_yaml.get_Kp(LHR);
+  joint[LHP].Kp = PD_gain_from_yaml.get_Kp(LHP);
+  joint[LKN].Kp = PD_gain_from_yaml.get_Kp(LKN);
+  joint[LAP].Kp = PD_gain_from_yaml.get_Kp(LAP);
+  joint[LAR].Kp = PD_gain_from_yaml.get_Kp(LAR);
+
+  joint[RHY].Kp = joint[LHY].Kp;
+  joint[RHR].Kp = joint[LHR].Kp;
+  joint[RHP].Kp = joint[LHP].Kp;
+  joint[RKN].Kp = joint[LKN].Kp;
+  joint[RAP].Kp = joint[LAP].Kp;
+  joint[RAR].Kp = joint[LAR].Kp;
+
+  joint[LHY].Kd = PD_gain_from_yaml.get_Kd(LHY);
+  joint[LHR].Kd = PD_gain_from_yaml.get_Kd(LHR);
+  joint[LHP].Kd = PD_gain_from_yaml.get_Kd(LHP);
+  joint[LKN].Kd = PD_gain_from_yaml.get_Kd(LKN);
+  joint[LAP].Kd = PD_gain_from_yaml.get_Kd(LAP);
+  joint[LAR].Kd = PD_gain_from_yaml.get_Kd(LAR);
+
+  joint[RHY].Kd = joint[LHY].Kd;
+  joint[RHR].Kd = joint[LHR].Kd;
+  joint[RHP].Kd = joint[LHP].Kd;
+  joint[RKN].Kd = joint[LKN].Kd;
+  joint[RAP].Kd = joint[LAP].Kd;
+  joint[RAR].Kd = joint[LAR].Kd;
 }
 
 

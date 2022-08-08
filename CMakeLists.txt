@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  roslib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -36,7 +37,7 @@ find_package (Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES kubot_study_pkgs
-  CATKIN_DEPENDS gazebo_ros roscpp rospy std_msgs
+  CATKIN_DEPENDS gazebo_ros roscpp rospy std_msgs roslib
 #  DEPENDS system_lib
 )
 
@@ -59,6 +60,7 @@ include_directories(
 add_library(${PROJECT_NAME}
    src/kubot_plugin.cc
    src/footstep_planner.cpp
+   src/read_yaml.cpp
 )
 
 ## Specify libraries to link a library or executable target against
@@ -67,6 +69,7 @@ target_link_libraries(${PROJECT_NAME}
     ${GAZEBO_LIBRARIES} 
     ${RBDL_LIBRARY} 
     ${RBDL_URDFReader_LIBRARY}
+    yaml-cpp
 )
 
 

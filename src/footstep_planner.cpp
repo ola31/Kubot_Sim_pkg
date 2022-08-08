@@ -2,7 +2,7 @@
 
 FootstepPlanner::FootstepPlanner()
   : fb_step_size(0.03), //m
-    step_time(1.4),    //sec
+    step_time(1.5),    //sec
     step_num(10),      //step number
     start_foot(0),     //left : 0 right : 1
     dsp_ratio(0.3),
