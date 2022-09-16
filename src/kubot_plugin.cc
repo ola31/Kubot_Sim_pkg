@@ -33,6 +33,8 @@
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Bool.h>
+
 #include <functional>
 #include <ignition/math/Vector3.hh>
 
@@ -281,6 +283,7 @@ namespace gazebo
         ros::Subscriber fb_step_sub;
         ros::Subscriber rl_step_sub;
         ros::Subscriber rl_turn_sub;
+        ros::Subscriber is_stop_sub;
 
         std_msgs::Float64 LHY_msg;
         std_msgs::Float64 LHR_msg;
@@ -350,6 +353,7 @@ namespace gazebo
         void fb_step_callback(const std_msgs::Float64::ConstPtr& msg);
         void rl_step_callback(const std_msgs::Float64::ConstPtr& msg);
         void rl_turn_callback(const std_msgs::Float64::ConstPtr& msg);
+        void is_stop_callback(const std_msgs::Bool::ConstPtr& msg);
     };
     GZ_REGISTER_MODEL_PLUGIN(rok3_plugin);
 }
@@ -1549,6 +1553,7 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
     fb_step_sub = nh.subscribe("kubotsim/walk_param/fb_step", 1000, &gazebo::rok3_plugin::fb_step_callback,this);
     rl_step_sub = nh.subscribe("kubotsim/walk_param/rl_step", 1000, &gazebo::rok3_plugin::rl_step_callback,this);
     rl_turn_sub = nh.subscribe("kubotsim/walk_param/rl_turn", 1000, &gazebo::rok3_plugin::rl_turn_callback,this);
+    is_stop_sub = nh.subscribe("kubotsim/walk_param/is_stop", 1000, &gazebo::rok3_plugin::is_stop_callback,this);
 
     /*** Initial setting for Preview Control ***/
     Preview_Init_Setting();
@@ -3231,4 +3236,9 @@ void gazebo::rok3_plugin::rl_step_callback(const std_msgs::Float64::ConstPtr& ms
 void gazebo::rok3_plugin::rl_turn_callback(const std_msgs::Float64::ConstPtr& msg)
 {
     FootPlaner.rl_turn = msg->data;
+}
+
+void gazebo::rok3_plugin::is_stop_callback(const std_msgs::Bool::ConstPtr& msg)
+{
+    FootPlaner.stop_flag = msg->data;
 }

@@ -183,6 +183,8 @@ public:
   double foot_index= 0; //left : 0, right : 1
   double t = 0.0;
 
+  bool stop_flag = false;
+
   MatrixXd foot_tf_global = MatrixXd::Identity(4,4);
   std::vector<double>pre_step;
 

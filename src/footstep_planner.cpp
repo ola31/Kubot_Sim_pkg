@@ -531,9 +531,11 @@ FootstepPlanner::FootstepPlanner()
     compensation_start_time_param(0.7),
     two_feet_on_ground(false),
 
-    fb_step(0.04),
+    fb_step(0.0),
     rl_step(0),//0.01;
-    rl_turn(0.0)//PI/36;
+    rl_turn(0.0),//PI/36;
+
+    stop_flag(false)
 {
 
 }
@@ -1229,6 +1231,27 @@ void FootstepPlanner::update_footsteps(double t_sec){
       Fplanner_time+=dt;
       return;
     }
+    if(stop_flag){
+      foot_index = (foot_index==1)?0:1;
+      double del_x, del_y, yaw;
+      if(foot_index == 0){ //left foot
+        del_x = 0.0;
+        del_y = foot_distance;
+        yaw = 0.0;
+      }
+      else if(foot_index == 1){ //right foot
+        del_x = 0.0;
+        del_y = -foot_distance;
+        yaw = 0.0;
+      }
+      std::vector<double> step;
+      step = get_step_vector(del_x,del_y,yaw,foot_index + 2*(int)stop_flag);
+      footstep_deque.push_back(step);
+
+      Fplanner_time+=dt;
+      return;
+    }
+
     foot_index = (foot_index==1)?0:1; //change foot index(left->right or right->left)
     if(foot_index == 0){//left foot
 
@@ -1634,7 +1657,8 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
   if(true/*step_index_n<=step_num-1*/){
 
     //if((start_foot == 0 and step_index_n%2 == 0) or (start_foot == 1 and step_index_n%2 == 1)){ //when left foot is supprot foot
-    if(abs(step[3] - 0)< 0.001){ //when left foot is supprot foot
+
+    if(abs(step[3] - 0)< 0.001 or abs(step[3] - 2)< 0.001){ //when left foot is supprot foot
       global_x   = step[0];
       global_y   = step[1];
       global_z   = 0.0;
@@ -1760,7 +1784,10 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
           global_x   = pre_step[0] + (next_step[0]-pre_step[0])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_y   = pre_step[1] + (next_step[1]-pre_step[1])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           //global_z   = ellipse_traj(t, pre_time+half_dsp_time, step_time-dsp_time, foot_height);
-          global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
+          if(step[3] >1.9 and next_step[3]>1.9)
+            global_z = 0.0;
+          else
+            global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
           ////global_yaw = pre_step[2] + (next_step[2]-pre_step[2])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_yaw = func_1_cos_yaw(pre_step[2], next_step[2],(t-pre_time-half_dsp_time),(step_time-dsp_time));
         }
@@ -1851,7 +1878,7 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
   if(true/*step_index_n<=step_num-1*/){
 
     //if((start_foot == 0 and step_index_n%2 == 1) or (start_foot == 1 and step_index_n%2 == 0)){ //when Right foot is supprot foot
-    if(abs(step[3] - 1.0)< 0.001){//when Right foot is support foot
+    if(abs(step[3] - 1.0)< 0.001 or abs(step[3] - 1.0 -2)< 0.001){//when Right foot is support foot
       global_x   = step[0];
       global_y   = step[1];
       global_z   = 0.0;
@@ -1970,7 +1997,11 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
           global_x   = pre_step[0] + (next_step[0]-pre_step[0])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_y   = pre_step[1] + (next_step[1]-pre_step[1])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           //global_z   = ellipse_traj(t, pre_time+half_dsp_time, step_time-dsp_time, foot_height);
-          global_z   = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
+          if(step[3] >1.9 and next_step[3]>1.9)
+            global_z = 0.0;
+          else
+            global_z   = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
+
           //global_yaw = pre_step[2] + (next_step[2]-pre_step[2])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_yaw = func_1_cos_yaw(pre_step[2], next_step[2],(t-pre_time-half_dsp_time),(step_time-dsp_time));
         }
@@ -2048,22 +2079,36 @@ struct XY FootstepPlanner::get_zmp_ref2(double t){
     //int step_index_n = (int)(t/step_time + 0.0001);
     std::vector<double>step;
     step = footstep_deque[step_index_n];
-    if(step_index_n<step_num){
+    if(step[3]<1.9/*stop flag false*/){
       //zmp_ref.x = FootSteps[step_index_n][0] + 0.000;  //assume that zmp_ref = foot_center_point
       //zmp_ref.y = 1.0*FootSteps[step_index_n][1];
       zmp_ref.x = step[0] + 0.000;  //assume that zmp_ref = foot_center_point
       zmp_ref.y = 1.0*step[1];
     }
     else{
-      //zmp_ref.x= FootSteps[step_num-1][0];
-      if((start_foot == 0 and (int)step_num%2==1)or(start_foot == 1 and (int)step_num%2 == 0)){ //last foot : left
-        zmp_ref.x= step[0] + (foot_distance/2.0)*sin(goal_turn_angle);
+/*
+      double s = sin(turn_angle_radian);
+      double c = cos(turn_angle_radian);
+      MatrixXd tmp_tf(4,4);
+      tmp_tf<<  c, -s, 0,  del_x,\
+                s,  c, 0,  del_y,\
+                0,  0, 1.0, 0,\
+                0,  0, 0,  1.0;
+      this->foot_tf_global = this->foot_tf_global*tmp_tf;
+      std::vector<double> step;
+      step.push_back(foot_tf_global(0,3)); //x
+      step.push_back(foot_tf_global(1,3)); //y
+*/
+      if(step[3]<1.5){ //left_foot
+        zmp_ref.x = step[0] + (foot_distance/2.0)*sin(goal_turn_angle);
         zmp_ref.y = step[1] - (foot_distance/2.0)*cos(goal_turn_angle); // must be modify
       }
       else{
-        zmp_ref.x= step[0] - (foot_distance/2.0)*sin(goal_turn_angle);
+        zmp_ref.x = step[0] - (foot_distance/2.0)*sin(goal_turn_angle);
         zmp_ref.y = step[1] + (foot_distance/2.0)*cos(goal_turn_angle);
       }
+      zmp_ref.x = 0.0;
+      zmp_ref.y = 0.0;
     }
   }
 
