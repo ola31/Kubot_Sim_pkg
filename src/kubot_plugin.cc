@@ -278,6 +278,10 @@ namespace gazebo
         ros::Publisher R_foot_z_pub;
         ros::Publisher foot_x_pub;
 
+        ros::Subscriber fb_step_sub;
+        ros::Subscriber rl_step_sub;
+        ros::Subscriber rl_turn_sub;
+
         std_msgs::Float64 LHY_msg;
         std_msgs::Float64 LHR_msg;
         std_msgs::Float64 LHP_msg;
@@ -342,6 +346,10 @@ namespace gazebo
 
         void initializeJoint(); // Initialize joint variables for joint control
         void SetJointPIDgain(); // Set each joint PID gain for joint control
+
+        void fb_step_callback(const std_msgs::Float64::ConstPtr& msg);
+        void rl_step_callback(const std_msgs::Float64::ConstPtr& msg);
+        void rl_turn_callback(const std_msgs::Float64::ConstPtr& msg);
     };
     GZ_REGISTER_MODEL_PLUGIN(rok3_plugin);
 }
@@ -1416,8 +1424,8 @@ void Practice(void){
     dph = rotMatToRotVec(C_err);
    // 
    // std::cout<<" Test, Rotational Vector"<<std::endl;
-    std::cout<< dph <<std::endl;
-    std::cout<<std::endl;
+    //std::cout<< dph <<std::endl;
+    //std::cout<<std::endl;
 
     //Practice 4 was completed
 
@@ -1538,6 +1546,10 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
     L_foot_z_pub = nh.advertise<std_msgs::Float64>("kubotsim/L_foot_z", 1000);
     R_foot_z_pub = nh.advertise<std_msgs::Float64>("kubotsim/R_foot_z", 1000);
 
+    fb_step_sub = nh.subscribe("kubotsim/walk_param/fb_step", 1000, &gazebo::rok3_plugin::fb_step_callback,this);
+    rl_step_sub = nh.subscribe("kubotsim/walk_param/rl_step", 1000, &gazebo::rok3_plugin::rl_step_callback,this);
+    rl_turn_sub = nh.subscribe("kubotsim/walk_param/rl_turn", 1000, &gazebo::rok3_plugin::rl_turn_callback,this);
+
     /*** Initial setting for Preview Control ***/
     Preview_Init_Setting();
 
@@ -1559,6 +1571,7 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
     Practice();
 
     FootPlaner.Plan();
+    FootPlaner.init_deque();
 /*
     FootstepPlanner f;
     f.Plan();
@@ -2305,7 +2318,7 @@ void gazebo::rok3_plugin::GetjointData()
     joint[RAP].actualRadian = R_Ankle_pitch_joint->Position(0);
     joint[RAR].actualRadian = R_Ankle_roll_joint->Position(0);
 
-    std::cout<<(joint[RKN].actualRadian)*R2D<<std::endl;
+    //std::cout<<(joint[RKN].actualRadian)*R2D<<std::endl;
 
     //joint[WST].actualRadian = torso_joint->Position(0);
 
@@ -2718,6 +2731,7 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
     ///test_pub2.publish(test_msg2);
     ///test_pub_L_z.publish(test_msg_L_z);
     ///test_pub_R_z.publish(test_msg_R_z);
+    ///
 
 
     //* Read Sensors data
@@ -2736,18 +2750,28 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
     double step_length = 0.05;
     double step_height = 0.1;
 
-    if((phase == 1) && time_index < n-N){ //use Preview Control
+    if((phase == 1) /*&& time_index < n-N*/){ //use Preview Control
 
-      zmp_error.x = zmp.x - FootPlaner.get_zmp_ref(time_index*dt).x;
-      zmp_error.y = zmp.y - FootPlaner.get_zmp_ref(time_index*dt).y;
+      FootPlaner.update_footsteps(time_index*dt);
+
+      //zmp_error.x = zmp.x - FootPlaner.get_zmp_ref(time_index*dt).x;
+      //zmp_error.y = zmp.y - FootPlaner.get_zmp_ref(time_index*dt).y;
+      zmp_error.x = zmp.x - FootPlaner.get_zmp_ref2(time_index*dt).x;
+      zmp_error.y = zmp.y - FootPlaner.get_zmp_ref2(time_index*dt).y;
+      //printf("%lf\n",FootPlaner.get_zmp_ref2(time_index*dt).y);
 
       sum_error.x = sum_error.x + zmp_error.x;
       sum_error.y = sum_error.y + zmp_error.y;
 
+      //printf("*****************\n");
       for(int j=0;j<N;j++){
-        u_sum_p.x = u_sum_p.x + Gp(j)*FootPlaner.get_zmp_ref(dt*(time_index + j + 1)).x;
-        u_sum_p.y = u_sum_p.y + Gp(j)*FootPlaner.get_zmp_ref(dt*(time_index + j + 1)).y;
+        //u_sum_p.x = u_sum_p.x + Gp(j)*FootPlaner.get_zmp_ref(dt*(time_index + j + 1)).x;
+        //u_sum_p.y = u_sum_p.y + Gp(j)*FootPlaner.get_zmp_ref(dt*(time_index + j + 1)).y;
+        u_sum_p.x = u_sum_p.x + Gp(j)*FootPlaner.get_zmp_ref2(dt*(time_index + j + 1)).x;
+        u_sum_p.y = u_sum_p.y + Gp(j)*FootPlaner.get_zmp_ref2(dt*(time_index + j + 1)).y;
+        //printf("%lf\n",FootPlaner.get_zmp_ref2(dt*(time_index + j + 1)).y);
       }
+      //printf("*****************\n");
 
       input_u.x = -Gi(0,0)*sum_error.x - (Gx*State_X)(0,0) - u_sum_p.x;
       input_u.y = -Gi(0,0)*sum_error.y - (Gx*State_Y)(0,0) - u_sum_p.y;
@@ -2806,19 +2830,38 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       else {
         phase++;
         t = 0;
+
       }
     }
     else if(phase == 1){
+      //std::cout<<"*******************"<<std::endl;
+       //FootPlaner.update_footsteps(time_index*dt);
+       //std::vector<double>a = FootPlaner.footstep_deque[0];
+       ///std::vector<double>b = FootPlaner.footstep_deque[1];
+       ///std::vector<double>c = FootPlaner.footstep_deque[2];
+       //printf("deque : %lf %lf %lf %lf\n",a[0],a[1],a[2],a[3]);
+       ///printf("deque : %lf %lf %lf %lf\n",b[0],b[1],b[2],b[3]);
+       ///printf("deque : %lf %lf %lf %lf\n",c[0],c[1],c[2],c[3]);
+       //XY zmp_ref2= FootPlaner.get_zmp_ref2(time_index*dt);
+      /// printf("zmp_ref_2 (x): %lf (y):%lf \n",zmp_ref2.x, zmp_ref2.y);
+       ///printf("deque_size : %d\n",FootPlaner.footstep_deque.size());
 /*
       Body <<  1,0,0,  CoM.x,
                0,1,0,  CoM.y,
                0,0,1, body_z,
                0,0,0,      1;
 */
-      Body <<  1,0,0,  CoM.x,
-               0,1,0,  CoM.y,
-               0,0,1, body_z,
-               0,0,0,      1;
+
+      //double CoM_yaw_= FootPlaner.get_CoM_yaw(time_index*dt);
+      double CoM_yaw_= FootPlaner.get_CoM_yaw2(time_index*dt);
+      //printf("com_yaw : %lf\n",CoM_yaw_*180/PI);
+      double com_sin = sin(CoM_yaw_);
+      double com_cos = cos(CoM_yaw_);
+
+      Body <<  com_cos, -com_sin, 0,  CoM.x,
+               com_sin,  com_cos, 0,  CoM.y,
+                     0,        0, 1, body_z,
+                     0,        0, 0,      1;
 
     // Foot_L <<1,0,0,         0,
     //          0,1,0,    foot_y,
@@ -2830,8 +2873,10 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
     //          0,0,1, R_foot_z,
     //          0,0,0,      1;
 
-      Foot_L = FootPlaner.get_Left_foot(time_index*dt);
-      Foot_R = FootPlaner.get_Right_foot(time_index*dt);
+      //Foot_L = FootPlaner.get_Left_foot(time_index*dt);
+      //Foot_R = FootPlaner.get_Right_foot(time_index*dt);
+      Foot_L = FootPlaner.get_Left_foot2(time_index*dt);
+      Foot_R = FootPlaner.get_Right_foot2(time_index*dt);
 
       //std::cout<<"Foot_L"<<std::endl;
       //std:cout<<Foot_L<<std::endl;
@@ -2842,7 +2887,8 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       test_pub_L_z.publish(test_msg_L_z);
       test_pub_R_z.publish(test_msg_R_z);
 
-      zmp_y_msg.data = FootPlaner.get_zmp_ref(time_index*dt).y;
+      zmp_y_msg.data = FootPlaner.get_zmp_ref2(time_index*dt).y;
+      //zmp_y_msg.data = FootPlaner.get_zmp_ref(time_index*dt).y;
       L_foot_z_msg.data = Foot_L(2,3);
       R_foot_z_msg.data = Foot_R(2,3);
 
@@ -2860,6 +2906,8 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
 
       if(time_index >= n-N){
+
+        /*
         FILE *fp; // DH : for save the data
         fp = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/zmp_com_l_footup.txt", "w");
         for(int i=0;i<save.size();i++){
@@ -2877,6 +2925,7 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
           fprintf(fp, "%.4f\n", save[i][4]); //r_foot_z
         }
         fclose(fp);
+        */
 
         phase++;
 
@@ -2900,15 +2949,23 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       data.push_back(CoM.y);
       data.push_back(R_foot_z);
       save.push_back(data);
+      /***** Time update *****/
+
+      //printf("time index * dt : %lf\n",time_index*dt);
+      //printf("fplanner time   : %lf\n",FootPlaner.Fplanner_time);
+      //printf("error  r time   : %lf\n",FootPlaner.Fplanner_time - (time_index*dt));
+      //printf("*************\n");
 
       time_index++;
+
+      //FootPlaner.Fplanner_time+=FootPlaner.dt;
       q_command_L = q_L;
       q_command_R = q_R;
     }
     else if(phase = 2){
 
     }
-
+    //FootPlaner.update_footsteps(time_index*dt);
 
 
 
@@ -3156,4 +3213,22 @@ MatrixXd ZMP_DARE(Eigen::Matrix4d A, Eigen::Vector4d B, Eigen::Matrix4d Q, Matri
     Eigen::MatrixXcd X = U2 * U1.inverse();
 
     return X.real();
+}
+
+
+
+/***** ROS callback functions ***/
+void gazebo::rok3_plugin::fb_step_callback(const std_msgs::Float64::ConstPtr& msg)
+{
+    FootPlaner.fb_step = msg->data;
+}
+
+void gazebo::rok3_plugin::rl_step_callback(const std_msgs::Float64::ConstPtr& msg)
+{
+    FootPlaner.rl_step = msg->data;
+}
+
+void gazebo::rok3_plugin::rl_turn_callback(const std_msgs::Float64::ConstPtr& msg)
+{
+    FootPlaner.rl_turn = msg->data;
 }
