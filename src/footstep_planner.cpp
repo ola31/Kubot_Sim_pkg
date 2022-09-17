@@ -516,7 +516,7 @@ double func_1_cos_yaw(double start, double end, double t, double T);
 FootstepPlanner::FootstepPlanner()
   : walking_mode(0),
     fb_step_size(0.000), //m
-    step_time(0.3),    //sec
+    step_time(0.4),    //sec
     step_num(1000),      //step number
     start_foot(0),     //left : 0 right : 1
     dsp_ratio(0.3),
@@ -531,11 +531,24 @@ FootstepPlanner::FootstepPlanner()
     compensation_start_time_param(0.7),
     two_feet_on_ground(false),
 
-    fb_step(0.02),
-    rl_step(0.01),//0.01;
-    rl_turn(PI/18),//PI/36;
+    //Footstep Params
+    max_fb_step(0.05),
+    max_rl_step(0.05),
+    max_rl_turn(PI/10),
 
-    stop_flag(false)
+    goal_fb_step(0.0),
+    goal_rl_step(0.0),
+    goal_rl_turn(0.0),
+
+    unit_fb_step(0.01),
+    unit_rl_step(0.01),
+    unit_rl_turn(PI/36),
+
+    fb_step(0.0),
+    rl_step(0.0),//0.01;
+    rl_turn(0.0),//PI/36;
+
+    stop_flag(true)
 {
 
 }
@@ -1192,7 +1205,7 @@ void FootstepPlanner::init_deque(void){
     }
 
 
-    step = get_step_vector(del_x,del_y,yaw,foot_index);
+    step = get_step_vector(del_x,del_y,yaw,foot_index + 2*(int)stop_flag);
     footstep_deque.push_back(step);
     sign *= -1;
 
@@ -1219,6 +1232,7 @@ void FootstepPlanner::update_footsteps(double t_sec){
   int step_time_ms=(int)(step_time*1000 + 0.00001);
 
   if(t_ms%step_time_ms == 0){ //every step_time
+    update_step_size_param();
 
     pre_step = footstep_deque[0];
     footstep_deque.pop_front();
@@ -1723,7 +1737,10 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
           global_x   = pre_x   + (next_step[0]  -pre_x)*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_y   = pre_y   + (next_step[1]  -pre_y)*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           //global_z   = ellipse_traj(t, pre_time+half_dsp_time, step_time-dsp_time, foot_height);
-          global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
+          if(step[3] >1.9 and next_step[3]>1.9)
+            global_z = 0.0;
+          else if(step[3] < 1.1)
+            global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
           //global_yaw = pre_yaw + (next_step[2]-pre_yaw)*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_yaw = func_1_cos_yaw(pre_yaw, next_step[2],(t-pre_time-half_dsp_time),(step_time-dsp_time));
         }
@@ -1943,7 +1960,10 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
           global_x   = pre_x   + (next_step[0]  -pre_x)*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_y   = pre_y   + (next_step[1]  -pre_y)*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           //global_z   = ellipse_traj(t, pre_time+half_dsp_time, step_time-dsp_time, foot_height);
-          global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
+          if(step[3] >1.9 and next_step[3]>1.9)
+            global_z = 0.0;
+          else if(step[3] < 1.1)
+            global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
           ////global_yaw = pre_yaw + (next_step[2]-pre_yaw)*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_yaw = func_1_cos_yaw(pre_yaw,next_step[2],(t-pre_time-half_dsp_time),(step_time-dsp_time));
         }
@@ -2204,6 +2224,50 @@ double func_1_cos_yaw(double start, double end, double t, double T){
     yaw = start + (end-start)*0.5*(1.0-cos(PI*(t/T))); //FootSteps[step_index_n][2];
   }
   return yaw;
+}
+
+
+void FootstepPlanner::update_step_size_param(void){
+
+  if(abs(goal_fb_step) > max_fb_step){
+    if(goal_fb_step > 0)
+      goal_fb_step = max_fb_step;
+    else
+      goal_fb_step = -max_fb_step;
+  }
+  if(abs(goal_rl_step) > max_rl_step){
+    if(goal_rl_step > 0)
+      goal_rl_step = max_rl_step;
+    else
+      goal_rl_step = -max_rl_step;
+  }
+  if(abs(goal_rl_turn) > max_rl_turn){
+    if(goal_rl_turn > 0)
+      goal_rl_turn = max_rl_turn;
+    else
+      goal_rl_turn = -max_rl_turn;
+  }
+
+
+  if(abs(goal_fb_step - fb_step)>unit_fb_step){
+    if(goal_fb_step > fb_step)
+      fb_step+=unit_fb_step;
+    else
+      fb_step-=unit_fb_step;
+  }
+  if(abs(goal_rl_step - rl_step)>unit_rl_step){
+    if(goal_rl_step > rl_step)
+      rl_step+=unit_rl_step;
+    else
+      rl_step-=unit_rl_step;
+  }
+  if(abs(goal_rl_turn - rl_turn)>unit_rl_turn){
+    if(goal_rl_turn > rl_turn)
+      rl_turn+=unit_rl_turn;
+    else
+      rl_turn-=unit_rl_turn;
+  }
+  return;
 }
 
 

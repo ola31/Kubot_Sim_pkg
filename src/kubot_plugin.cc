@@ -2955,12 +2955,12 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       data.push_back(R_foot_z);
       save.push_back(data);
       /***** Time update *****/
-
-      //printf("time index * dt : %lf\n",time_index*dt);
-      //printf("fplanner time   : %lf\n",FootPlaner.Fplanner_time);
-      //printf("error  r time   : %lf\n",FootPlaner.Fplanner_time - (time_index*dt));
-      //printf("*************\n");
-
+/*
+      printf("time index * dt : %lf\n",time_index*dt-1.5);
+      printf("fplanner time   : %lf\n",FootPlaner.Fplanner_time);
+      printf("error  r time   : %lf\n",FootPlaner.Fplanner_time - (time_index*dt-1.5));
+      printf("*************\n");
+*/
       time_index++;
 
       //FootPlaner.Fplanner_time+=FootPlaner.dt;
@@ -3225,17 +3225,17 @@ MatrixXd ZMP_DARE(Eigen::Matrix4d A, Eigen::Vector4d B, Eigen::Matrix4d Q, Matri
 /***** ROS callback functions ***/
 void gazebo::rok3_plugin::fb_step_callback(const std_msgs::Float64::ConstPtr& msg)
 {
-    FootPlaner.fb_step = msg->data;
+    FootPlaner.goal_fb_step = msg->data;
 }
 
 void gazebo::rok3_plugin::rl_step_callback(const std_msgs::Float64::ConstPtr& msg)
 {
-    FootPlaner.rl_step = msg->data;
+    FootPlaner.goal_rl_step = msg->data;
 }
 
 void gazebo::rok3_plugin::rl_turn_callback(const std_msgs::Float64::ConstPtr& msg)
 {
-    FootPlaner.rl_turn = msg->data;
+    FootPlaner.goal_rl_turn = msg->data;
 }
 
 void gazebo::rok3_plugin::is_stop_callback(const std_msgs::Bool::ConstPtr& msg)

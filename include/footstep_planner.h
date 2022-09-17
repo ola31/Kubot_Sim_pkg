@@ -168,9 +168,13 @@ public:
   double Fplanner_time = 0.00;
   double dt = 0.001;
 
-  double fb_step_max;
-  double rl_step_max;
-  double rl_turn_max;
+  double max_fb_step;
+  double max_rl_step;
+  double max_rl_turn;
+
+  double goal_fb_step;
+  double goal_rl_step;
+  double goal_rl_turn;
 
   double fb_step = -0.02;
   double rl_step = 0.03;//0.01;
@@ -200,6 +204,8 @@ public:
   MatrixXd get_Right_foot2(double t);
   struct XY get_zmp_ref2(double t);
   double get_CoM_yaw2(double t);
+
+  void update_step_size_param(void);
 
 
 };
