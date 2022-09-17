@@ -2249,20 +2249,26 @@ void FootstepPlanner::update_step_size_param(void){
   }
 
 
-  if(abs(goal_fb_step - fb_step)>unit_fb_step){
-    if(goal_fb_step > fb_step)
+  if(abs(goal_fb_step - fb_step)>=unit_fb_step-0.001){
+    if(abs(goal_fb_step)<0.001)
+      fb_step = 0.0;
+    else if(goal_fb_step > fb_step)
       fb_step+=unit_fb_step;
     else
       fb_step-=unit_fb_step;
   }
-  if(abs(goal_rl_step - rl_step)>unit_rl_step){
-    if(goal_rl_step > rl_step)
+  if(abs(goal_rl_step - rl_step)>=unit_rl_step-0.001){
+    if(abs(goal_rl_step)<0.001)
+      rl_step = 0.0;
+    else if(goal_rl_step > rl_step)
       rl_step+=unit_rl_step;
     else
       rl_step-=unit_rl_step;
   }
-  if(abs(goal_rl_turn - rl_turn)>unit_rl_turn){
-    if(goal_rl_turn > rl_turn)
+  if(abs(goal_rl_turn - rl_turn)>=unit_rl_turn-0.001){
+    if(abs(goal_rl_turn)<0.001)
+      rl_turn = 0.0;
+    else if(goal_rl_turn > rl_turn)
       rl_turn+=unit_rl_turn;
     else
       rl_turn-=unit_rl_turn;
