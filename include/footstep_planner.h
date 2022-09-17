@@ -184,6 +184,7 @@ public:
   double t = 0.0;
 
   bool stop_flag = false;
+  bool two_step_on_spot_to_go = false; //walk 2 step on spot to (stop -> go)
 
   MatrixXd foot_tf_global = MatrixXd::Identity(4,4);
   std::vector<double>pre_step;

@@ -162,7 +162,7 @@ struct XY{
 };
 */
 
-double All_time_trajectory = 100;//15.0;  //(sec)
+double All_time_trajectory = 3600*100;//15.0;  //(sec)  100 hour
 double dt = 0.001;  //sampling time
 int N = 1000;  //preview NL
 int n = (int)((double)All_time_trajectory/dt)+1;

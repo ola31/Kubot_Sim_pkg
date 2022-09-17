@@ -531,9 +531,9 @@ FootstepPlanner::FootstepPlanner()
     compensation_start_time_param(0.7),
     two_feet_on_ground(false),
 
-    fb_step(0.0),
-    rl_step(0),//0.01;
-    rl_turn(0.0),//PI/36;
+    fb_step(0.02),
+    rl_step(0.01),//0.01;
+    rl_turn(PI/18),//PI/36;
 
     stop_flag(false)
 {
@@ -1232,6 +1232,8 @@ void FootstepPlanner::update_footsteps(double t_sec){
       return;
     }
     if(stop_flag){
+      two_step_on_spot_to_go = true;
+
       foot_index = (foot_index==1)?0:1;
       double del_x, del_y, yaw;
       if(foot_index == 0){ //left foot
@@ -1248,6 +1250,29 @@ void FootstepPlanner::update_footsteps(double t_sec){
       step = get_step_vector(del_x,del_y,yaw,foot_index + 2*(int)stop_flag);
       footstep_deque.push_back(step);
 
+      Fplanner_time+=dt;
+      return;
+    }
+
+    if(two_step_on_spot_to_go){
+      for(int i=0;i<2;i++){
+        foot_index = (foot_index==1)?0:1;
+        double del_x, del_y, yaw;
+        if(foot_index == 0){ //left foot
+          del_x = 0.0;
+          del_y = foot_distance;
+          yaw = 0.0;
+        }
+        else if(foot_index == 1){ //right foot
+          del_x = 0.0;
+          del_y = -foot_distance;
+          yaw = 0.0;
+        }
+        std::vector<double> step;
+        step = get_step_vector(del_x,del_y,yaw,foot_index);
+        footstep_deque.push_back(step);
+      }
+      two_step_on_spot_to_go = false;
       Fplanner_time+=dt;
       return;
     }
@@ -1715,6 +1740,7 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
           global_yaw = next_step[2];
         }
       }
+      /*
       else if(step_index_n == step_num-1){
 
         last_foot == 1; //last foot : right, side foot : left
@@ -1775,8 +1801,8 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
         }
 
       }
-
-      else if(step_index_n > 0 and step_index_n < step_num-1){
+      */
+      else if(step_index_n > 0 /*and step_index_n < step_num-1*/){
         int pre_step_index = step_index_n-1;
         int next_step_index = step_index_n+1;
 
@@ -1786,7 +1812,7 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
           //global_z   = ellipse_traj(t, pre_time+half_dsp_time, step_time-dsp_time, foot_height);
           if(step[3] >1.9 and next_step[3]>1.9)
             global_z = 0.0;
-          else
+          else if(step[3] < 1.1)
             global_z = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
           ////global_yaw = pre_step[2] + (next_step[2]-pre_step[2])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
           global_yaw = func_1_cos_yaw(pre_step[2], next_step[2],(t-pre_time-half_dsp_time),(step_time-dsp_time));
@@ -1934,6 +1960,7 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
           global_yaw = next_step[2];
         }
       }
+      /*
       else if(step_index_n == step_num-1){ //when finishing
         //double foot_distance = 0.1;
 
@@ -1988,8 +2015,9 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
         }
 
       }
+      */
 
-      else if(step_index_n > 0 or step_index_n < step_num-1){
+      else if(step_index_n > 0 /*or step_index_n < step_num-1*/){
         int pre_step_index = step_index_n-1;
         int next_step_index = step_index_n+1;
 
@@ -1999,7 +2027,7 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
           //global_z   = ellipse_traj(t, pre_time+half_dsp_time, step_time-dsp_time, foot_height);
           if(step[3] >1.9 and next_step[3]>1.9)
             global_z = 0.0;
-          else
+          else if(step[3] < 1.1)
             global_z   = Bezier_curve_8th(t, pre_time+half_dsp_time, step_time-dsp_time);
 
           //global_yaw = pre_step[2] + (next_step[2]-pre_step[2])*0.5*(1.0-cos(PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
@@ -2099,16 +2127,16 @@ struct XY FootstepPlanner::get_zmp_ref2(double t){
       step.push_back(foot_tf_global(0,3)); //x
       step.push_back(foot_tf_global(1,3)); //y
 */
-      if(step[3]<1.5){ //left_foot
-        zmp_ref.x = step[0] + (foot_distance/2.0)*sin(goal_turn_angle);
-        zmp_ref.y = step[1] - (foot_distance/2.0)*cos(goal_turn_angle); // must be modify
+      if(step[3]<2.5){ //left_foot
+        zmp_ref.x = step[0] + (foot_distance/2.0)*sin(step[2]);
+        zmp_ref.y = step[1] - (foot_distance/2.0)*cos(step[2]); // must be modify
       }
       else{
-        zmp_ref.x = step[0] - (foot_distance/2.0)*sin(goal_turn_angle);
-        zmp_ref.y = step[1] + (foot_distance/2.0)*cos(goal_turn_angle);
+        zmp_ref.x = step[0] - (foot_distance/2.0)*sin(step[2]);
+        zmp_ref.y = step[1] + (foot_distance/2.0)*cos(step[2]);
       }
-      zmp_ref.x = 0.0;
-      zmp_ref.y = 0.0;
+    //  zmp_ref.x = 0.0;
+    //  zmp_ref.y = 0.0;
     }
   }
 
@@ -2120,7 +2148,7 @@ double FootstepPlanner::get_CoM_yaw2(double t){
 
   double preview_start_wait_time = 1.5;
   double CoM_yaw= 0.0;
-  double unit_turn_angle = goal_turn_angle/step_num;
+  //double unit_turn_angle = goal_turn_angle/step_num;
   if(t < preview_start_wait_time){  //wait when start for preview
     CoM_yaw= 0.0;
   }
@@ -2136,7 +2164,7 @@ double FootstepPlanner::get_CoM_yaw2(double t){
       next_step = footstep_deque[1];
     }
 
-    if(t<step_num*step_time){
+  //  if(t<step_num*step_time){
       if(next_step[2]*step[2] < 0 && abs(step[2])>(PI/2.0)){
         double a = (next_step[2]>=0.0)?(-2.0*PI):(2.0*PI);
         double delta = (next_step[2]+a) - step[2];
@@ -2150,10 +2178,10 @@ double FootstepPlanner::get_CoM_yaw2(double t){
       else{
         CoM_yaw = step[2] + (next_step[2]-step[2])*(t-pre_time)/step_time; //FootSteps[step_index_n][2];
       }
-    }
-    else{ //must be modified
-      CoM_yaw = step[2];//(step_num)*unit_turn_angle; //FootSteps[step_num-1][2];
-    }
+  //  }
+  //  else{ //must be modified
+  //    CoM_yaw = step[2];//(step_num)*unit_turn_angle; //FootSteps[step_num-1][2];
+  //  }
   }
 
     return CoM_yaw;
