@@ -34,6 +34,7 @@
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
+#include "sensor_msgs/Joy.h"
 
 #include <functional>
 #include <ignition/math/Vector3.hh>
@@ -280,10 +281,15 @@ namespace gazebo
         ros::Publisher R_foot_z_pub;
         ros::Publisher foot_x_pub;
 
+        ros::Publisher LHR_add_q_pub;
+        ros::Publisher RHR_add_q_pub;
+
         ros::Subscriber fb_step_sub;
         ros::Subscriber rl_step_sub;
         ros::Subscriber rl_turn_sub;
         ros::Subscriber is_stop_sub;
+
+        ros::Subscriber joy_sub;
 
         std_msgs::Float64 LHY_msg;
         std_msgs::Float64 LHR_msg;
@@ -301,6 +307,9 @@ namespace gazebo
         std_msgs::Float64 L_foot_z_msg;
         std_msgs::Float64 R_foot_z_msg;
         std_msgs::Float64 foot_x_msg;
+
+        std_msgs::Float64 LHR_add_q_msg;
+        std_msgs::Float64 RHR_add_q_msg;
 
 
 
@@ -354,6 +363,7 @@ namespace gazebo
         void rl_step_callback(const std_msgs::Float64::ConstPtr& msg);
         void rl_turn_callback(const std_msgs::Float64::ConstPtr& msg);
         void is_stop_callback(const std_msgs::Bool::ConstPtr& msg);
+        void joy_callback(const sensor_msgs::Joy::ConstPtr& msg);
     };
     GZ_REGISTER_MODEL_PLUGIN(rok3_plugin);
 }
@@ -1550,10 +1560,14 @@ void gazebo::rok3_plugin::Load(physics::ModelPtr _model, sdf::ElementPtr /*_sdf*
     L_foot_z_pub = nh.advertise<std_msgs::Float64>("kubotsim/L_foot_z", 1000);
     R_foot_z_pub = nh.advertise<std_msgs::Float64>("kubotsim/R_foot_z", 1000);
 
+    LHR_add_q_pub = nh.advertise<std_msgs::Float64>("kubotsim/LHR_add_q", 1000);
+    RHR_add_q_pub = nh.advertise<std_msgs::Float64>("kubotsim/RHR_add_q", 1000);
+
     fb_step_sub = nh.subscribe("kubotsim/walk_param/fb_step", 1000, &gazebo::rok3_plugin::fb_step_callback,this);
     rl_step_sub = nh.subscribe("kubotsim/walk_param/rl_step", 1000, &gazebo::rok3_plugin::rl_step_callback,this);
     rl_turn_sub = nh.subscribe("kubotsim/walk_param/rl_turn", 1000, &gazebo::rok3_plugin::rl_turn_callback,this);
     is_stop_sub = nh.subscribe("kubotsim/walk_param/is_stop", 1000, &gazebo::rok3_plugin::is_stop_callback,this);
+    joy_sub = nh.subscribe("joy", 1000, &gazebo::rok3_plugin::joy_callback,this);
 
     /*** Initial setting for Preview Control ***/
     Preview_Init_Setting();
@@ -2902,6 +2916,13 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       zmp_y_pub.publish(zmp_y_msg);
 
 
+      LHR_add_q_msg.data = FootPlaner.get_LHR_add_q();
+      RHR_add_q_msg.data = FootPlaner.get_RHR_add_q();
+      LHR_add_q_pub.publish(LHR_add_q_msg);
+      RHR_add_q_pub.publish(RHR_add_q_msg);
+
+
+
       VectorXd q_L(6);
       VectorXd q_R(6);
       VectorXd init(6);
@@ -2910,31 +2931,31 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       q_L = IK_Geometric(Body, L1, L3, L4, L5, Foot_L);
       q_R = IK_Geometric(Body, -L1, L3, L4, L5, Foot_R);
 
-      if(time_index >= n-N){
-
-        /*
-        FILE *fp; // DH : for save the data
-        fp = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/zmp_com_l_footup.txt", "w");
-        for(int i=0;i<save.size();i++){
-          if(i == 0){
-            fprintf(fp,"time\t");
-            fprintf(fp,"zmp_ref_y\t");
-            fprintf(fp,"zmp_y\t");
-            fprintf(fp,"COM_y\t");
-            fprintf(fp,"r_Foot_z\n");
-          }
-          fprintf(fp, "%.4f\t", save[i][0]); //time
-          fprintf(fp, "%.4f\t", save[i][1]); //zmp_ref_y
-          fprintf(fp, "%.4f\t", save[i][2]); //zmp y
-          fprintf(fp, "%.4f\t", save[i][3]); //CoM y
-          fprintf(fp, "%.4f\n", save[i][4]); //r_foot_z
-        }
-        fclose(fp);
-        */
-
-        phase++;
-
-      }
+//      if(time_index >= 30000/*n-N*/){
+//
+//
+//        FILE *fp; // DH : for save the data
+//        fp = fopen("/home/ola/catkin_test_ws/src/Kubot_Sim_Pkg/src/data_save_ola/zmp_com_l_footup.txt", "w");
+//        for(int i=0;i<save.size();i++){
+//          if(i == 0){
+//            fprintf(fp,"time\t");
+//            fprintf(fp,"zmp_ref_y\t");
+//            fprintf(fp,"zmp_y\t");
+//            fprintf(fp,"COM_y\t");
+//            fprintf(fp,"r_Foot_z\n");
+//          }
+//          fprintf(fp, "%.4f\t", save[i][0]); //time
+//          fprintf(fp, "%.4f\t", save[i][1]); //zmp_ref_y
+//          fprintf(fp, "%.4f\t", save[i][2]); //zmp y
+//          fprintf(fp, "%.4f\t", save[i][3]); //CoM y
+//          fprintf(fp, "%.4f\n", save[i][4]); //r_foot_z
+//        }
+//        fclose(fp);
+//
+//
+//      //phase++;
+//
+//      }
 /*
       if(time_index*dt > 5){
         R_foot_z = func_1_cos(t,0,foot_height,T);
@@ -2947,13 +2968,13 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
       }
 */
 
-      std::vector<double> data;
-      data.push_back(time_index*dt);
-      data.push_back(get_zmp_ref(time_index).y);
-      data.push_back(zmp.y);
-      data.push_back(CoM.y);
-      data.push_back(R_foot_z);
-      save.push_back(data);
+  //    std::vector<double> data;
+  //    data.push_back(time_index*dt);
+  //    data.push_back(FootPlaner.get_zmp_ref2(time_index*dt).y);
+  //    data.push_back(zmp.y);
+  //    data.push_back(CoM.y);
+  //    data.push_back(R_foot_z);
+  //    save.push_back(data);
       /***** Time update *****/
 /*
       printf("time index * dt : %lf\n",time_index*dt-1.5);
@@ -2979,6 +3000,9 @@ void gazebo::rok3_plugin::UpdateAlgorithm3()
 
 
     //* Target Angles
+
+    q_command_L(1)+=FootPlaner.get_LHR_add_q();
+    q_command_R(1)+=FootPlaner.get_RHR_add_q();
 
     joint[LHY].targetRadian = q_command_L(0);//*D2R;
     joint[LHR].targetRadian = q_command_L(1);//*D2R;
@@ -3241,4 +3265,28 @@ void gazebo::rok3_plugin::rl_turn_callback(const std_msgs::Float64::ConstPtr& ms
 void gazebo::rok3_plugin::is_stop_callback(const std_msgs::Bool::ConstPtr& msg)
 {
     FootPlaner.stop_flag = msg->data;
+}
+
+void gazebo::rok3_plugin::joy_callback(const sensor_msgs::Joy::ConstPtr& msg)
+{
+    double fb_step_command = FootPlaner.max_fb_step*msg->axes[1];
+    double rl_step_command = FootPlaner.max_rl_step*msg->axes[0];
+    double rl_turn_command = FootPlaner.max_rl_turn*msg->axes[3];
+
+    if(abs(fb_step_command)<FootPlaner.unit_fb_step)
+      fb_step_command = 0.0;
+    if(abs(rl_step_command)<FootPlaner.unit_rl_step)
+      rl_step_command = 0.0;
+    if(abs(rl_turn_command)<FootPlaner.unit_rl_turn)
+      rl_turn_command = 0.0;
+    bool stop_command = msg->buttons[0]; //(X) button
+    bool walk_start_command = msg->buttons[1]; //(O) button
+    if(stop_command>=0.9)
+      FootPlaner.stop_flag = true;
+    if(walk_start_command>=0.9)
+      FootPlaner.stop_flag = false;
+
+    FootPlaner.goal_fb_step = fb_step_command;
+    FootPlaner.goal_rl_step = rl_step_command;
+    FootPlaner.goal_rl_turn = rl_turn_command;
 }

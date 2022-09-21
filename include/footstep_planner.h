@@ -126,6 +126,7 @@ private:
   double func_1_cos_param;
   bool two_feet_on_ground;
   double compensation_start_time_param;
+  double compensation_start_time;
 
 
 

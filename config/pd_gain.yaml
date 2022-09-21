@@ -6,8 +6,8 @@ hip_yaw:
   Kd: 1.0
 
 hip_roll:
-  Kp: 300.0
-  Kd: 2.5
+  Kp: 20.0 #300.0
+  Kd:  1.0 #2.5
 
 hip_pitch:
   Kp: 260.0

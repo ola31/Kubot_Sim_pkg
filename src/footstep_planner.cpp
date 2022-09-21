@@ -512,11 +512,12 @@ int FootstepPlanner::factorial(int n){
 #include "footstep_planner.h"
 
 double func_1_cos_yaw(double start, double end, double t, double T);
+double func_1_cos_double(double start, double end, double t, double T);
 
 FootstepPlanner::FootstepPlanner()
   : walking_mode(0),
     fb_step_size(0.000), //m
-    step_time(0.4),    //sec
+    step_time(0.3),    //sec
     step_num(1000),      //step number
     start_foot(0),     //left : 0 right : 1
     dsp_ratio(0.3),
@@ -525,10 +526,12 @@ FootstepPlanner::FootstepPlanner()
     foot_distance(0.10), //m
     RHR_add_q(0.0),
     LHR_add_q(0.0),
-    Hip_roll_add_q(7.0*PI/180.0),
+    Hip_roll_add_q(1.3*PI/180.0),
     Foot_y_adding(0.00),
     func_1_cos_param(5.0),
-    compensation_start_time_param(0.7),
+    compensation_start_time_param(0.8),
+    compensation_start_time(0.2*step_time*dsp_ratio*0.5),
+
     two_feet_on_ground(false),
 
     //Footstep Params
@@ -655,25 +658,86 @@ struct XY FootstepPlanner::get_zmp_ref(double t){
     zmp_ref.x = 0.0;
     zmp_ref.y = 0.0;
   }
+  //else{
+  //  t = t-preview_start_wait_time;
+  //  int step_index_n = (int)(t/step_time + 0.0001);
+  //  if(step_index_n<step_num){
+  //    zmp_ref.x = FootSteps[step_index_n][0] + 0.000;  //assume that zmp_ref = foot_center_point
+  //    zmp_ref.y = 1.0*FootSteps[step_index_n][1];
+  //  }
+  //  else{
+  //    //zmp_ref.x= FootSteps[step_num-1][0];
+  //    if((start_foot == 0 and (int)step_num%2==1)or(start_foot == 1 and (int)step_num%2 == 0)){ //last foot : left
+  //      zmp_ref.x= FootSteps[step_num-1][0] + (foot_distance/2.0)*sin(goal_turn_angle);
+  //      zmp_ref.y = FootSteps[step_num-1][1] - (foot_distance/2.0)*cos(goal_turn_angle); // must be modify
+  //    }
+  //    else{
+  //      zmp_ref.x= FootSteps[step_num-1][0] - (foot_distance/2.0)*sin(goal_turn_angle);
+  //      zmp_ref.y = FootSteps[step_num-1][1] + (foot_distance/2.0)*cos(goal_turn_angle);
+  //    }
+  //  }
+  //}
   else{
     t = t-preview_start_wait_time;
-    int step_index_n = (int)(t/step_time + 0.0001);
-    if(step_index_n<step_num){
-      zmp_ref.x = FootSteps[step_index_n][0] + 0.000;  //assume that zmp_ref = foot_center_point
-      zmp_ref.y = 1.0*FootSteps[step_index_n][1];
-    }
-    else{
-      //zmp_ref.x= FootSteps[step_num-1][0];
-      if((start_foot == 0 and (int)step_num%2==1)or(start_foot == 1 and (int)step_num%2 == 0)){ //last foot : left
-        zmp_ref.x= FootSteps[step_num-1][0] + (foot_distance/2.0)*sin(goal_turn_angle);
-        zmp_ref.y = FootSteps[step_num-1][1] - (foot_distance/2.0)*cos(goal_turn_angle); // must be modify
+    //int t_ms = (int)(t*1000+ 0.0001);
+    int Fplanner_time_ms= (int)((Fplanner_time)*1000 + 0.00001);
+    int step_time_ms = (int)(step_time*1000 + 0.0001);
+    int step_num_;
+    //step_num = t_ms/step_time_ms; //Nth step 0,1,2~
+    step_num_ = Fplanner_time_ms/step_time_ms; //Nth step 0,1,2~
+    int step_index_n = (int)((t-(step_num_*step_time))/step_time + 0.00001);
+
+    //int step_index_n = (int)(t/step_time + 0.0001);
+    std::vector<double>step;
+    if(step_index_n>=footstep_deque.size())
+      step = footstep_deque.back();
+      //step_index_n = footstep_deque.size()-1;
+    else
+      step = footstep_deque[step_index_n];
+
+    if(step[3]<1.9/*stop flag false*/){
+      //zmp_ref.x = FootSteps[step_index_n][0] + 0.000;  //assume that zmp_ref = foot_center_point
+      //zmp_ref.y = 1.0*FootSteps[step_index_n][1];
+      zmp_ref.x = step[0] + 0.000;  //assume that zmp_ref = foot_center_point
+      zmp_ref.y = 1.0*step[1];
+
+      if(step[3]<0.5){ //left_foot
+        zmp_ref.x -= ((0.015)*sin(step[2]));// - (0.02)*cos(step[2]));
+        zmp_ref.y += ((0.015)*cos(step[2]));// + (0.02)*sin(step[2]));
       }
       else{
-        zmp_ref.x= FootSteps[step_num-1][0] - (foot_distance/2.0)*sin(goal_turn_angle);
-        zmp_ref.y = FootSteps[step_num-1][1] + (foot_distance/2.0)*cos(goal_turn_angle);
+        zmp_ref.x += ((0.015)*sin(step[2]));// + (0.02)*cos(step[2]));
+        zmp_ref.y -= ((0.015)*cos(step[2]));// - (0.02)*sin(step[2]));
+        //Y ADD ,X ADD
       }
     }
+    else{
+     /*
+      double s = sin(turn_angle_radian);
+      double c = cos(turn_angle_radian);
+      MatrixXd tmp_tf(4,4);
+      tmp_tf<<  c, -s, 0,  del_x,\
+                s,  c, 0,  del_y,\
+                0,  0, 1.0, 0,\
+                0,  0, 0,  1.0;
+      this->foot_tf_global = this->foot_tf_global*tmp_tf;
+      std::vector<double> step;
+      step.push_back(foot_tf_global(0,3)); //x
+      step.push_back(foot_tf_global(1,3)); //y
+      */
+      if(step[3]<2.5){ //left_foot
+        zmp_ref.x = step[0] + (foot_distance/2.0)*sin(step[2]);
+        zmp_ref.y = step[1] - (foot_distance/2.0)*cos(step[2]); // must be modify
+      }
+      else{
+        zmp_ref.x = step[0] - (foot_distance/2.0)*sin(step[2]);
+        zmp_ref.y = step[1] + (foot_distance/2.0)*cos(step[2]);
+      }
+    //  zmp_ref.x = 0.0;
+    //  zmp_ref.y = 0.0;
+    }
   }
+
   return zmp_ref;
 }
 
@@ -1709,12 +1773,34 @@ MatrixXd FootstepPlanner::get_Left_foot2(double t){
 
       LHR_add_q =  0.0;
       RHR_add_q =  0.0;
-
+      /*
       if(half_dsp_time<=t-pre_time and t-pre_time<=(step_time-half_dsp_time)){
         //LHR_add_q =  Hip_roll_add_q*0.5*(1.0-cos(2.0*PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
         LHR_add_q = func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
         RHR_add_q =  0.0;//LHR_add_q;//0.0;
         R_foot_y_adding = Foot_y_adding*0.5*(1.0-cos(2.0*PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
+      }
+      */
+      //if(compensation_start_time_param*half_dsp_time<=t-pre_time and t-pre_time<=(step_time-compensation_start_time_param*half_dsp_time) and (step[3] < 1.1)){
+      //  //LHR_add_q =  Hip_roll_add_q*0.5*(1.0-cos(2.0*PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
+      //  LHR_add_q = func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
+      //  RHR_add_q =  0.0;//LHR_add_q;//0.0;
+      //  R_foot_y_adding = Foot_y_adding*0.5*(1.0-cos(2.0*PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
+      //}
+      if(step[3] < 1.1){
+        if(t-pre_time< compensation_start_time){
+          LHR_add_q=0.0;
+        }
+        else if(compensation_start_time<=t-pre_time and t-pre_time<=half_dsp_time*compensation_start_time_param){
+          LHR_add_q = func_1_cos_double(0.0,Hip_roll_add_q,t-pre_time-compensation_start_time,half_dsp_time*compensation_start_time_param-compensation_start_time); //func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
+        }
+        else if(t-pre_time>= (step_time-compensation_start_time_param) and t-pre_time>=(step_time-half_dsp_time*compensation_start_time_param)){
+          LHR_add_q = func_1_cos_double(Hip_roll_add_q,0.0,t-pre_time-(step_time-half_dsp_time*compensation_start_time_param),half_dsp_time*compensation_start_time_param-compensation_start_time);
+        }
+        else{
+          LHR_add_q = Hip_roll_add_q;
+        }
+        RHR_add_q =  0.0;
       }
     }
     else{ //when left foot is moving foot
@@ -1933,12 +2019,44 @@ MatrixXd FootstepPlanner::get_Right_foot2(double t){
 
       LHR_add_q = 0.0;
       RHR_add_q = 0.0;
-
+      /*
       if(half_dsp_time<=t-pre_time and t-pre_time<=(step_time-half_dsp_time)){
         //LHR_add_q =  0.0;
        // RHR_add_q =  -Hip_roll_add_q*0.5*(1.0-cos(2.0*PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
         RHR_add_q = -func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
         LHR_add_q = 0.0;//RHR_add_q;
+      }
+      */
+      //if(compensation_start_time_param*half_dsp_time<=t-pre_time and t-pre_time<=(step_time-compensation_start_time_param*half_dsp_time) and (step[3] < 1.1)){
+      //  //LHR_add_q =  0.0;
+      // // RHR_add_q =  -Hip_roll_add_q*0.5*(1.0-cos(2.0*PI*((t-pre_time-half_dsp_time)/(step_time-dsp_time))));
+      //  RHR_add_q = -func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
+      //  LHR_add_q = 0.0;//RHR_add_q;
+      //}
+      ///if(t-pre_time<=half_dsp_time*compensation_start_time_param){
+      ///  RHR_add_q = func_1_cos_double(0.0,-Hip_roll_add_q,t-pre_time,half_dsp_time); //func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
+      ///}
+      ///else if(t-pre_time>=step_time-half_dsp_time*compensation_start_time_param){
+      ///  RHR_add_q = func_1_cos_double(-Hip_roll_add_q,0.0,t-pre_time,half_dsp_time);
+      ///}
+      ///else{
+      ///  RHR_add_q = -Hip_roll_add_q;
+      ///}
+      ///LHR_add_q = 0.0;
+      if(step[3] < 1.1){
+        if(t-pre_time< compensation_start_time){
+          RHR_add_q=0.0;
+        }
+        else if(compensation_start_time<=t-pre_time and t-pre_time<=half_dsp_time*compensation_start_time_param){
+          RHR_add_q = func_1_cos_double(0.0,-Hip_roll_add_q,t-pre_time-compensation_start_time,half_dsp_time*compensation_start_time_param-compensation_start_time); //func_1_cos(t,pre_time+compensation_start_time_param*half_dsp_time,step_time-dsp_time+(1.0-compensation_start_time_param)*half_dsp_time,Hip_roll_add_q);
+        }
+        else if(t-pre_time>= (step_time-compensation_start_time_param) and t-pre_time>=(step_time-half_dsp_time*compensation_start_time_param)){
+          RHR_add_q = func_1_cos_double(-Hip_roll_add_q,0.0,t-pre_time-(step_time-half_dsp_time*compensation_start_time_param),half_dsp_time*compensation_start_time_param-compensation_start_time);
+        }
+        else{
+          RHR_add_q = -Hip_roll_add_q;
+        }
+        LHR_add_q =  0.0;
       }
     }
     else{ //when right foot is moving foot
@@ -2126,12 +2244,27 @@ struct XY FootstepPlanner::get_zmp_ref2(double t){
 
     //int step_index_n = (int)(t/step_time + 0.0001);
     std::vector<double>step;
-    step = footstep_deque[step_index_n];
+    if(step_index_n>=footstep_deque.size())
+      step = footstep_deque.back();
+      //step_index_n = footstep_deque.size()-1;
+    else
+      step = footstep_deque[step_index_n];
+
     if(step[3]<1.9/*stop flag false*/){
       //zmp_ref.x = FootSteps[step_index_n][0] + 0.000;  //assume that zmp_ref = foot_center_point
       //zmp_ref.y = 1.0*FootSteps[step_index_n][1];
       zmp_ref.x = step[0] + 0.000;  //assume that zmp_ref = foot_center_point
       zmp_ref.y = 1.0*step[1];
+
+      if(step[3]<0.5){ //left_foot
+        zmp_ref.x -= ((0.015)*sin(step[2]));// - (0.02)*cos(step[2]));
+        zmp_ref.y += ((0.015)*cos(step[2]));// + (0.02)*sin(step[2]));
+      }
+      else{
+        zmp_ref.x += ((0.015)*sin(step[2]));// + (0.02)*cos(step[2]));
+        zmp_ref.y -= ((0.015)*cos(step[2]));// - (0.02)*sin(step[2]));
+        //Y ADD ,X ADD
+      }
     }
     else{
 /*
@@ -2162,6 +2295,68 @@ struct XY FootstepPlanner::get_zmp_ref2(double t){
 
   return zmp_ref;
 }
+
+//// struct XY FootstepPlanner::get_zmp_ref2(double t){
+////
+////   struct XY zmp_ref;
+////
+////   double preview_start_wait_time = 1.5;
+////
+////   if(t < preview_start_wait_time){  //wait when start for preview
+////     zmp_ref.x = 0.0;
+////     zmp_ref.y = 0.0;
+////   }
+////   else{
+////     t = t-preview_start_wait_time;
+////     //int t_ms = (int)(t*1000+ 0.0001);
+////     int Fplanner_time_ms= (int)((Fplanner_time)*1000 + 0.0001) ;
+////     int step_time_ms = (int)(step_time*1000 + 0.0001);
+////     int step_num_;
+////     //step_num = t_ms/step_time_ms; //Nth step 0,1,2~
+////     step_num_ = Fplanner_time_ms/step_time_ms; //Nth step 0,1,2~
+////     int step_index_n = (int)((t-(step_num_*step_time))/step_time + 0.00001);
+////     //printf("step_index_n : %d time :  %lf\n", step_index_n,(t-(step_num_*step_time)));
+////
+////     //int step_index_n = (int)(t/step_time + 0.0001);
+////     std::vector<double>step;
+////     if(step_index_n>=footstep_deque.size())
+////       step_index_n = footstep_deque.size()-1;
+////     step = footstep_deque[step_index_n];
+////     if(step[3]<1.9/*stop flag false*/){
+////       //zmp_ref.x = FootSteps[step_index_n][0] + 0.000;  //assume that zmp_ref = foot_center_point
+////       //zmp_ref.y = 1.0*FootSteps[step_index_n][1];
+////       zmp_ref.x = step[0] + 0.000;  //assume that zmp_ref = foot_center_point
+////       zmp_ref.y = 1.0*step[1];
+////     }
+////     else{
+////     /*
+////       double s = sin(turn_angle_radian);
+////       double c = cos(turn_angle_radian);
+////       MatrixXd tmp_tf(4,4);
+////       tmp_tf<<  c, -s, 0,  del_x,\
+////                 s,  c, 0,  del_y,\
+////                 0,  0, 1.0, 0,\
+////                 0,  0, 0,  1.0;
+////       this->foot_tf_global = this->foot_tf_global*tmp_tf;
+////       std::vector<double> step;
+////       step.push_back(foot_tf_global(0,3)); //x
+////       step.push_back(foot_tf_global(1,3)); //y
+////       */
+////       if(step[3]<2.5){ //left_foot
+////         zmp_ref.x = step[0] + (foot_distance/2.0)*sin(step[2]);
+////         zmp_ref.y = step[1] - (foot_distance/2.0)*cos(step[2]); // must be modify
+////       }
+////       else{
+////         zmp_ref.x = step[0] - (foot_distance/2.0)*sin(step[2]);
+////         zmp_ref.y = step[1] + (foot_distance/2.0)*cos(step[2]);
+////       }
+////     //  zmp_ref.x = 0.0;
+////     //  zmp_ref.y = 0.0;
+////     }
+////   }
+////
+////   return zmp_ref;
+//// }
 
 
 double FootstepPlanner::get_CoM_yaw2(double t){
@@ -2276,4 +2471,11 @@ void FootstepPlanner::update_step_size_param(void){
   return;
 }
 
-
+double func_1_cos_double(double start, double end, double t, double T){
+  if(0.0<=t and t<=T)
+    return start + (end-start)*0.5*(1.0-cos(PI*(t/T)));
+  else if(t<0.0)
+    return start;
+  else
+    return end;
+}
